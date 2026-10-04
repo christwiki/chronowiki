@@ -241,6 +241,12 @@ describe('formatting', () => {
     expect(i18nFor('en').languageName('Latin')).toBe('Latin');
   });
 
+  it('writes a day of our own time day first, as the dates of the timeline are written', () => {
+    const day = new Date(Date.UTC(2026, 9, 4));
+    expect(i18nFor('en').day(day)).toBe('4 October 2026');
+    expect(i18nFor('de').day(day)).toBe('4. Oktober 2026');
+  });
+
   it('turns the arrows round where the text runs right to left', () => {
     expect(i18nFor('en').arrow).toEqual({ back: '←', forward: '→' });
   });

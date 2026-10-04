@@ -17,6 +17,7 @@ const NAV: { id: string; label: MessageKey; path: string }[] = [
   { id: 'people', label: 'nav.people', path: '/people/' },
   { id: 'places', label: 'nav.places', path: '/places/' },
   { id: 'sources', label: 'nav.sources', path: '/sources/' },
+  ...(wiki.book ? [{ id: 'book', label: 'nav.book' as MessageKey, path: '/book/' }] : []),
   { id: 'about', label: 'nav.about', path: '/about/' },
 ];
 

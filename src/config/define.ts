@@ -41,6 +41,7 @@ export function defineWiki(input: WikiInput): WikiConfig {
     defaultLocale,
     regions,
     regionNames,
+    book: input.book ?? true,
   };
 }
 

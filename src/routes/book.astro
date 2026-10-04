@@ -1,0 +1,100 @@
+---
+import '../styles/index.css';
+import config from 'virtual:chronowiki/config';
+import { bookSlug } from '../book/model';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { getSite, isPublished } from '../lib/site';
+
+export function getStaticPaths() {
+  return config.book ? localeParams().map((params) => ({ params })) : [];
+}
+
+const i18n = useI18n(Astro);
+const { t, href } = i18n;
+const site = await getSite(i18n.code);
+const slug = bookSlug(i18n.code);
+
+const count = (entries: Iterable<{ data: { draft?: boolean } }>) => [...entries].filter(isPublished).length;
+const holds = i18n.list([
+  t('common.events', { count: site.events.length }),
+  t('book.people', { count: count(site.people.values()) }),
+  t('places.count', { count: count(site.places.values()) }),
+  t('book.sources', { count: count(site.sources.values()) }),
+]);
+const edition = t('book.edition', { date: i18n.day(new Date()) });
+---
+
+<Base title={t('book.title')} description={t('book.description', { site: config.name })} section="book">
+  <article class="page page--narrow book" data-pagefind-body>
+    <header>
+      <p class="label">{t('nav.book')}</p>
+      <h1 data-pagefind-meta="title">{t('book.title')}</h1>
+      <span data-pagefind-meta={`kind:${t('kind.page')}`} hidden></span>
+      <p class="lead">{t('book.lead')}</p>
+      <p class="meta" data-book-edition>{edition} · {holds}</p>
+    </header>
+
+    <div class="book__formats">
+      <section class="book__format">
+        <h2>{t('book.epubTitle')}</h2>
+        <p>{t('book.epubNote')}</p>
+        <a class="button" href={href(`/book/${slug}.epub`)} download data-book="epub">{t('book.epubDownload')}</a>
+      </section>
+      <section class="book__format">
+        <h2>{t('book.pdfTitle')}</h2>
+        <p>{t('book.pdfNote')}</p>
+        <a class="button" href={href(`/book/${slug}.pdf`)} download data-book="pdf">{t('book.pdfDownload')}</a>
+      </section>
+    </div>
+
+    <div class="prose">
+      <h2>{t('book.linksTitle')}</h2>
+      <p>{t('book.howLinks')}</p>
+      <p>{t('book.howCitations')}</p>
+      <h2>{t('book.updatedTitle')}</h2>
+      <p>{t('book.updated')}</p>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .book header {
+    margin-block-end: var(--space-6);
+  }
+
+  .book__formats {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    margin-block-end: var(--space-7);
+  }
+
+  .book__format {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-large);
+    background: var(--surface);
+  }
+
+  .book__format h2 {
+    font-size: var(--step-1);
+    margin: 0;
+  }
+
+  .book__format p {
+    margin: 0;
+    color: var(--ink-muted);
+    font-family: var(--font-sans);
+    font-size: var(--ui);
+    line-height: 1.5;
+    flex: 1;
+  }
+
+  .book__format .button {
+    align-self: flex-start;
+  }
+</style>

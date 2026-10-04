@@ -80,7 +80,8 @@ export function i18nFor(code: string = DEFAULT_LOCALE): I18n {
   const numbers = new Intl.NumberFormat(code);
   const lists = new Intl.ListFormat(code, { type: 'conjunction' });
   const collator = new Intl.Collator(code);
-  const days = new Intl.DateTimeFormat(code, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  // English days are written day first, like the dates of the timeline: "4 October 2026".
+  const days = new Intl.DateTimeFormat(code === 'en' ? 'en-GB' : code, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
   const confidence = (level: Confidence) => t(`confidence.${level}.label`);
 
   const i18n: I18n = {

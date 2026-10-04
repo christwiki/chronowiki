@@ -1,6 +1,6 @@
 {
   "name": "chronowiki",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "An Astro theme for history wikis built on a timeline: every event dated, placed on a map and tied to its primary sources.",
   "license": "MIT",
@@ -38,6 +38,8 @@
   "files": [
     "integration.mjs",
     "integration.d.ts",
+    "book-build.mjs",
+    "book-build.d.mts",
     "bin",
     "cli",
     "src",
@@ -59,16 +61,21 @@
     "astro": "^7.3.5"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/newsreader": "^0.4.1",
     "@fontsource-variable/inter": "^5.3.0",
     "@fontsource-variable/newsreader": "^5.3.0",
+    "@myriaddreamin/typst-ts-node-compiler": "^0.7.0",
     "bible-passage-reference-parser": "^4.0.0",
     "d3-geo": "^3.1.1",
     "d3-selection": "^3.0.0",
     "d3-transition": "^3.0.1",
     "d3-zoom": "^3.0.0",
+    "fflate": "^0.8.3",
     "js-yaml": "^5.4.2",
     "micromark": "^4.0.3",
     "pagefind": "^1.5.2",
+    "sharp": "^0.35.4",
     "topojson-client": "^3.1.0",
     "tsx": "^4.23.15"
   },

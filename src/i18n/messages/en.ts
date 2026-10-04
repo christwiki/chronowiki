@@ -29,6 +29,7 @@ export const en = {
     places: 'Places',
     sources: 'Sources',
     about: 'About',
+    book: 'Book',
     search: 'Search',
     theme: 'Switch colour theme',
     language: 'Language',
@@ -404,6 +405,33 @@ export const en = {
     startTimeline: 'timeline',
     startThread: 'thread',
     startSources: 'sources',
+  },
+
+  /** The whole wiki as a book for e-readers, made together with the site. */
+  book: {
+    title: 'The book',
+    description: 'All of {site} as a book for e-readers: an EPUB for any reader and a PDF for large e-paper tablets.',
+    lead: 'Everything on this site as one book, to read away from the screen. It is made from the same entries as the site, and made again whenever one of them changes.',
+    edition: 'Edition of {date}',
+    people: { one: '{count} person', other: '{count} people' },
+    sources: { one: '{count} source', other: '{count} sources' },
+    epubTitle: 'For any e-reader',
+    epubNote: 'Kindle, Kobo, PocketBook, tolino, and the reading apps on phones and tablets. The text takes the size and the typeface you choose on the device.',
+    epubDownload: 'Download the EPUB',
+    pdfTitle: 'For large e-paper tablets',
+    pdfNote: 'reMarkable, Kindle Scribe, Boox, Supernote. The pages are the size of a 10-inch screen, so there is nothing to zoom.',
+    pdfDownload: 'Download the PDF',
+    linksTitle: 'How the links work',
+    updatedTitle: 'Always the current edition',
+    updated: 'The book is made together with the site. When an entry is corrected here, the next edition of the book has the correction. The day it was made is on its title page.',
+    /** Inside the book. */
+    contents: 'Contents',
+    howTitle: 'How to read this book',
+    howOrder: 'The timeline comes first, era by era and event by event. After it come the threads that run through the eras, then the people, the places and the sources in alphabetical order, and last the page that says how this book is made.',
+    howLinks: 'Every underlined name is a link: touch it to go to that person, place, source or event. Each of those entries lists the events it belongs to, so there is always a way back.',
+    howCitations: 'A citation in brackets names the passage a sentence rests on. Touch it to see the source: what it is, who wrote it and when, and where it can be read.',
+    howDates: 'Every date carries one of four labels that say how sure it is:',
+    howUpdated: 'This book is made from {site} ({url}) and made again whenever an entry changes. This is the {edition}.',
   },
 
   translation: {

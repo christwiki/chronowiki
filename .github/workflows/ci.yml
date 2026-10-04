@@ -28,6 +28,11 @@ jobs:
         run: npm test
       - name: The example wiki passes its checks and builds
         run: npm run build
+      - name: The example's EPUB passes the validator of the EPUB standard
+        run: |
+          curl -sSL -o epubcheck.zip https://github.com/w3c/epubcheck/releases/download/v5.4.0/epubcheck-5.4.0.zip
+          unzip -q epubcheck.zip
+          java -jar epubcheck-5.4.0/epubcheck.jar example/dist/book/example-wiki.epub
       - name: Install the browser
         run: npx playwright install --with-deps chromium
       - name: Browser and accessibility tests

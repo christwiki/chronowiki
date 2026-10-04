@@ -9,6 +9,7 @@
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { typesetBooks } from './book-build.mjs';
 
 const CONFIG_NAMES = ['wiki.config.ts', 'wiki.config.mts', 'wiki.config.mjs', 'wiki.config.js'];
 const VIRTUAL = 'virtual:chronowiki/config';
@@ -23,6 +24,9 @@ const ROUTES = [
   ['/[...locale]', 'index.astro'],
   ['/[...locale]/map', 'map.astro'],
   ['/[...locale]/about', 'about.astro'],
+  ['/[...locale]/book', 'book.astro'],
+  ['/[...locale]/book/[name].epub', 'book-epub.ts'],
+  ['/[...locale]/book/[name].typ', 'book-typ.ts'],
   ['/[...locale]/events/[id]', 'event.astro'],
   ['/[...locale]/people', 'people.astro'],
   ['/[...locale]/people/[id]', 'person.astro'],
@@ -94,8 +98,9 @@ export default function chronowiki(options = {}) {
       },
 
       async 'astro:build:done'({ dir, logger }) {
-        if (options.search === false) return;
         const out = fileURLToPath(dir);
+        await typesetBooks(out, logger);
+        if (options.search === false) return;
         const pagefind = await import('pagefind');
         const { index, errors } = await pagefind.createIndex();
         if (!index) throw new Error(`chronowiki: the search index could not be started: ${errors.join('; ')}`);

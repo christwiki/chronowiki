@@ -43,6 +43,13 @@ export interface ProseContext {
   bible?: BibleStyle;
   quotes?: Quotes;
   articleRule?: 'english';
+  /**
+   * Where the text will be read. On the `web` (the default) a citation opens
+   * the passage itself. In a `book`, which may be read on a device with no
+   * browser, a citation of a source leads to that source's own entry and a
+   * Bible reference is not a link: the reference is all a reader needs.
+   */
+  medium?: 'web' | 'book';
 }
 
 export type Token =
@@ -144,6 +151,9 @@ function render(markdown: string, ctx: ProseContext, inline: boolean): ProseResu
           return fail(token, `Invalid Bible reference "${token.ref}"`);
         }
         if (!result.bible.some((b) => b.osis === ref.osis)) result.bible.push(ref);
+        if (ctx.medium === 'book') {
+          return `<span class="cite cite--bible">(${ref.links.map((link) => escapeHtml(link.label)).join('; ')})</span>`;
+        }
         // Most readers take the whole reference in one link; some take one passage at a time.
         return ref.links
           .map((link, index) => {
@@ -164,6 +174,12 @@ function render(markdown: string, ctx: ProseContext, inline: boolean): ProseResu
           const used: UsedCitation = { key: token.key, source, url, label };
           if (def.at !== undefined) used.at = def.at;
           result.cites.push(used);
+        }
+        if (ctx.medium === 'book') {
+          const text = `(${escapeHtml(label)})`;
+          return source.href
+            ? `<a class="cite cite--source" href="${escapeHtml(source.href)}">${text}</a>`
+            : `<span class="cite cite--source">${text}</span>`;
         }
         return `<a class="cite cite--source" href="${escapeHtml(url)}" data-source="${escapeHtml(source.id)}" target="_blank" rel="noopener">(${escapeHtml(label)})</a>`;
       }

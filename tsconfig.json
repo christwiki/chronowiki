@@ -3,6 +3,6 @@
   "compilerOptions": {
     "types": ["node", "astro/client"]
   },
-  "include": ["src", "cli", "scripts", "tests", "integration.d.ts", "vitest.config.ts", "playwright.config.ts"],
+  "include": ["src", "cli", "scripts", "tests", "integration.d.ts", "book-build.d.mts", "vitest.config.ts", "playwright.config.ts"],
   "exclude": ["example", "node_modules"]
 }
