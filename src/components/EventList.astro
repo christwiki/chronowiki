@@ -1,0 +1,121 @@
+---
+import { useI18n } from '../i18n';
+import { entryHref, getSite, langOf, type EventView } from '../lib/site';
+import ConfidenceMark from './ConfidenceMark.astro';
+import DateLabel from './DateLabel.astro';
+
+interface Props {
+  events: EventView[];
+  /** Mark one event as the current one, for example on a thread's own page. */
+  current?: string;
+  /** Show each event's summary under its title. */
+  summaries?: boolean;
+}
+
+const { events, current, summaries = false } = Astro.props;
+const site = await getSite(useI18n(Astro).code);
+---
+
+<ol class="event-list" role="list">
+  {
+    events.map((event) => {
+      const lang = langOf(site, event.entry);
+      return (
+        <li
+          class:list={['event-list__item', event.id === current && 'is-current']}
+          style={`--era-colour: var(--${event.eraEntry.data.colour})`}
+        >
+          <ConfidenceMark confidence={event.date.confidence} class="event-list__mark" />
+          <DateLabel date={event.date} mark={false} class="event-list__date" lang={lang} />
+          <div class="event-list__body" lang={lang}>
+            {event.id === current ? (
+              <span class="event-list__title" aria-current="true">
+                {event.title}
+              </span>
+            ) : (
+              <a class="event-list__title" href={entryHref(site, 'event', event.id)}>
+                {event.title}
+              </a>
+            )}
+            {summaries && !event.data.draft && <p class="event-list__summary">{event.data.summary}</p>}
+          </div>
+        </li>
+      );
+    })
+  }
+</ol>
+
+<style>
+  .event-list {
+    position: relative;
+  }
+
+  .event-list::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(0.75rem - 1px);
+    top: 0.6rem;
+    bottom: 0.6rem;
+    width: 2px;
+    background: var(--rule-strong);
+  }
+
+  .event-list__item {
+    --mark-bg: var(--bg);
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.5rem 8.5rem minmax(0, 1fr);
+    column-gap: var(--space-3);
+    align-items: baseline;
+    padding-block: 0.4rem;
+  }
+
+  .event-list__item :global(.event-list__mark) {
+    justify-self: center;
+    align-self: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .event-list__item :global(.event-list__date) {
+    font-size: var(--ui-small);
+    font-weight: 600;
+    color: var(--era-colour);
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  .event-list__title {
+    font-size: 1.0625rem;
+    line-height: 1.3;
+    text-decoration: none;
+  }
+
+  a.event-list__title:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 0.06em;
+    text-underline-offset: 0.18em;
+  }
+
+  .is-current .event-list__title {
+    font-weight: 600;
+  }
+
+  .event-list__summary {
+    margin-top: 0.15rem;
+    font-size: 0.94rem;
+    line-height: 1.45;
+    color: var(--ink-muted);
+    max-width: 60ch;
+  }
+
+  @media (max-width: 34rem) {
+    .event-list__item {
+      grid-template-columns: 1.5rem minmax(0, 1fr);
+    }
+
+    .event-list__body {
+      grid-column: 2;
+    }
+  }
+</style>

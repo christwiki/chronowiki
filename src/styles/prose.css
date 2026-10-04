@@ -1,0 +1,85 @@
+/* Reading text rendered from Markdown by src/lib/prose.ts */
+
+.prose {
+  max-width: var(--measure);
+}
+
+.prose > * + * {
+  margin-top: 1.05em;
+}
+
+.prose h2 {
+  margin-top: 1.8em;
+}
+
+.prose blockquote {
+  margin-inline: 0;
+  padding-inline-start: var(--space-4);
+  border-inline-start: 2px solid var(--rule-strong);
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+.prose ul,
+.prose ol {
+  padding-inline-start: 1.25em;
+}
+
+.prose a:not(.cite):not(.wikilink) {
+  color: var(--accent);
+}
+
+/* Internal links: quiet, so that a paragraph full of names still reads as prose. */
+.wikilink {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--ink-faint);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.2em;
+}
+
+a.wikilink:hover {
+  text-decoration-style: solid;
+  text-decoration-color: var(--ink);
+}
+
+.wikilink--pending {
+  text-decoration: none;
+}
+
+/* Citations: the rubric. Sans-serif, smaller, in the accent colour. */
+.cite {
+  font-family: var(--font-sans);
+  font-size: 0.78em;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+  border-radius: 3px;
+}
+
+.cite:hover,
+.cite:focus-visible,
+.cite[aria-expanded='true'] {
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.2em;
+}
+
+/* Long citations may wrap on narrow screens. */
+@media (max-width: 40rem) {
+  .cite {
+    white-space: normal;
+  }
+}
+
+.prose--small {
+  font-size: 0.94em;
+  color: var(--ink-muted);
+}
+
+.prose--small > * + * {
+  margin-top: 0.8em;
+}

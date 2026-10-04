@@ -1,0 +1,37 @@
+---
+/**
+ * Says so when an entry is not in the page's language: either it has not been
+ * translated yet, or its translation was made from an earlier version of the
+ * original. Shows nothing in the language the wiki is written in.
+ */
+import { DEFAULT_LOCALE, i18nFor, neutralPath, useI18n } from '../i18n';
+import type { EntryI18n } from '../lib/site';
+
+interface Props {
+  entry: { i18n: EntryI18n };
+  /** Set to false where the notice already sits inside the page column. */
+  column?: boolean;
+}
+
+const { entry, column = true } = Astro.props;
+const i18n = useI18n(Astro);
+const { t } = i18n;
+const missing = !entry.i18n.translated;
+const language = i18n.originalLanguage;
+const original = i18nFor(DEFAULT_LOCALE).href(neutralPath(Astro.url.pathname));
+---
+
+{
+  i18n.code !== DEFAULT_LOCALE && (missing || entry.i18n.stale) && (
+    <p class:list={['translation-notice', column && 'page']} data-translation={missing ? 'missing' : 'stale'} data-pagefind-ignore>
+      {missing ? t('translation.missing', { language }) : t('translation.stale', { language })}
+      {
+        !missing && (
+          <a href={original} hreflang={DEFAULT_LOCALE}>
+            {t('translation.original', { language })}
+          </a>
+        )
+      }
+    </p>
+  )
+}

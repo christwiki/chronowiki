@@ -1,0 +1,89 @@
+---
+import '../styles/index.css';
+import EntryHeader from '../components/EntryHeader.astro';
+import EventList from '../components/EventList.astro';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { entryHref, getSite, langOf, renderBody } from '../lib/site';
+
+export async function getStaticPaths() {
+  const site = await getSite();
+  return localeParams().flatMap((locale) => site.threads.map((thread) => ({ params: { ...locale, id: thread.id } })));
+}
+
+const { t, href, arrow, code } = useI18n(Astro);
+const site = await getSite(code);
+const thread = site.threadsById.get(Astro.params.id!)!;
+const lang = langOf(site, thread);
+const body = renderBody(site, thread);
+const events = site.byThread.get(thread.id) ?? [];
+const index = site.threads.findIndex((candidate) => candidate.id === thread.id);
+const previous = site.threads[index - 1];
+const next = site.threads[index + 1];
+---
+
+<Base title={thread.data.title} description={thread.data.summary} section="threads">
+  <article data-pagefind-body>
+    <EntryHeader
+      kicker={t('threads.title')}
+      kickerHref={href('/threads/')}
+      title={thread.data.title}
+      lead={thread.data.summary}
+      kind={t('kind.thread')}
+      entry={thread}
+    >
+      <Fragment slot="facts">
+        <span>{t('common.events', { count: events.length })}</span>
+        <a href={href(`/?thread=${thread.id}`)}>{t('common.showOnTimeline')}</a>
+      </Fragment>
+    </EntryHeader>
+
+    <div class="page entry-body">
+      <div class="prose" lang={lang} set:html={body.html} />
+
+      <section class="entry-body__section" aria-labelledby="events-title" data-pagefind-ignore>
+        <h2 id="events-title">{t('threads.whole')}</h2>
+        <EventList events={events} summaries />
+      </section>
+
+      <nav class="thread-pager" aria-label={t('threads.others')}>
+        {
+          previous ? (
+            <a href={entryHref(site, 'thread', previous.id)}>
+              {arrow.back} <span lang={langOf(site, previous)}>{previous.data.title}</span>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+        {
+          next && (
+            <a href={entryHref(site, 'thread', next.id)}>
+              <span lang={langOf(site, next)}>{next.data.title}</span> {arrow.forward}
+            </a>
+          )
+        }
+      </nav>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .thread-pager {
+    margin-top: var(--space-7);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    font-size: var(--step-1);
+  }
+
+  .thread-pager a {
+    text-decoration: none;
+  }
+
+  .thread-pager a:hover {
+    text-decoration: underline;
+  }
+</style>

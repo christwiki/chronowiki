@@ -1,0 +1,18 @@
+---
+/** The page for a missing address in every language but the first, which `src/pages/404.astro` serves. */
+import NotFound from '../components/NotFound.astro';
+import { DEFAULT_LOCALE, activeLocales, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+
+export function getStaticPaths() {
+  return activeLocales()
+    .filter((locale) => locale.code !== DEFAULT_LOCALE)
+    .map((locale) => ({ params: { locale: locale.code } }));
+}
+
+const { t } = useI18n(Astro);
+---
+
+<Base title={t('notFound.title')}>
+  <NotFound />
+</Base>

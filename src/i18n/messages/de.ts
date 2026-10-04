@@ -1,0 +1,394 @@
+/** The site's interface in German. The keys are those of `en.ts`; see the notes there. */
+import type { Messages } from '../types';
+
+export const de: Messages = {
+  site: {
+    tagline: 'Geschichte auf einem Zeitstrahl, belegt mit ihren Primärquellen.',
+    description:
+      'Ein Wiki in Form eines Zeitstrahls. Jeder Eintrag zeigt, wann und wo etwas geschah und wie es zusammenhängt, und verweist auf die Primärquellen.',
+  },
+
+  nav: {
+    label: 'Hauptnavigation',
+    home: 'Startseite von {site}',
+    skip: 'Zum Inhalt springen',
+    timeline: 'Zeitstrahl',
+    map: 'Karte',
+    threads: 'Leitfäden',
+    people: 'Personen',
+    places: 'Orte',
+    sources: 'Quellen',
+    about: 'Über das Projekt',
+    search: 'Suche',
+    theme: 'Farbschema wechseln',
+    language: 'Sprache',
+    breadcrumb: 'Brotkrumenpfad',
+  },
+
+  footer: {
+    lead: '{site} belegt jeden Eintrag mit Primärquellen. Einen Fehler gefunden?',
+    correct: 'So lässt er sich melden',
+    method: 'Methode und Quellen',
+    dates: 'Wie Datierungen gekennzeichnet sind',
+    code: 'Quelltext und Inhalte',
+    license: 'Text unter {license}',
+  },
+
+  confidence: {
+    firm: {
+      label: 'Gesichertes Datum',
+      description: 'Durch zeitgenössische Zeugnisse belegt und nicht ernsthaft bestritten.',
+      example: '',
+    },
+    estimated: {
+      label: 'Geschätztes Datum',
+      description: 'Eine wissenschaftliche Schätzung aus Primärzeugnissen, mit einem Spielraum von Jahren.',
+      example: '',
+    },
+    traditional: {
+      label: 'Traditionelles Datum',
+      description: 'Aus späterer Überlieferung, ohne ein Zeugnis aus der Zeit selbst.',
+      example: '',
+    },
+    undated: {
+      label: 'Undatiert',
+      description: 'Von der Quelle ohne datierbaren Rahmen erzählt.',
+      example: '',
+    },
+  },
+
+  date: {
+    bc: '{year} v. Chr.',
+    ad: '{year} n. Chr.',
+    plain: '{year}',
+    rangeBc: '{start}–{end} v. Chr.',
+    rangeAd: '{start}–{end} n. Chr.',
+    rangePlain: '{start}–{end}',
+    rangeAcross: '{start} – {end}',
+    monthYear: '{month} {date}',
+    dayMonthYear: '{day}. {month} {date}',
+    circa: 'um {date}',
+    undated: 'Undatiert',
+    spokenCirca: 'um {date}',
+    spokenRange: '{start} bis {end}',
+    spokenUndated: 'undatiert',
+    spoken: '{date}, {confidence}',
+    lifespan: '{born} – {died}',
+    born: 'geboren {date}',
+    died: 'gestorben {date}',
+  },
+
+  home: {
+    title: 'Geschichte auf einem Zeitstrahl',
+    lead: {
+      one: '{count} Moment. Er zeigt, wann und wo etwas geschah, wie es mit dem Übrigen zusammenhängt und auf welchen Primärquellen es beruht.',
+      other:
+        '{count} Momente. Jeder zeigt, wann und wo etwas geschah, wie es mit dem Übrigen zusammenhängt und auf welchen Primärquellen es beruht.',
+    },
+    legend: 'Wie Datierungen gekennzeichnet sind',
+    legendMore: 'Was diese Zeichen bedeuten',
+    end: 'Hier endet der Zeitstrahl vorerst.',
+    endLink: 'Wie {site} entsteht',
+    mapPanel: 'Karte der sichtbaren Ereignisse',
+    mapClose: 'Karte schließen',
+    mapFull: 'Ganze Karte öffnen',
+    mapButton: 'Karte',
+  },
+
+  filter: {
+    label: 'Zeitstrahl filtern',
+    byWord: 'Ereignisse nach Wort filtern',
+    placeholder: 'Nach Wort, Person oder Ort filtern',
+    era: 'Epoche',
+    thread: 'Leitfaden',
+    region: 'Region',
+    dating: 'Datierung',
+    clear: 'Filter zurücksetzen',
+    count: { one: '{count} Ereignis', other: '{count} Ereignisse' },
+    countOf: { one: '{matched} von {count} Ereignis', other: '{matched} von {count} Ereignissen' },
+  },
+
+  common: {
+    events: { one: '{count} Ereignis', other: '{count} Ereignisse' },
+    draft: 'Entwurf',
+    notWritten: 'Dieser Eintrag ist noch nicht geschrieben.',
+    also: 'Auch: {names}',
+    primarySources: 'Primärquellen',
+    showOnTimeline: 'Auf dem Zeitstrahl zeigen',
+    earlier: 'Früher',
+    later: 'Später',
+    range: '{first} bis {last}',
+  },
+
+  kind: {
+    event: 'Ereignis',
+    person: 'Person',
+    place: 'Ort',
+    source: 'Quelle',
+    thread: 'Leitfaden',
+    era: 'Epoche',
+    page: 'Seite',
+  },
+
+  eras: {
+    rail: 'Epochen',
+    eventsOf: 'Ereignisse dieser Epoche',
+    others: 'Weitere Epochen',
+    where: 'Schauplätze dieser Epoche',
+    places: 'Die Orte der Ereignisse dieser Epoche.',
+  },
+
+  event: {
+    datingTitle: 'Wie dies datiert wird',
+    reviewed: 'Jeder Beleg auf dieser Seite wurde am {date} unabhängig an seiner Quelle geprüft.',
+    awaiting: 'Die Belege auf dieser Seite sind noch nicht unabhängig geprüft.',
+    aside: 'Zu diesem Ereignis',
+    where: 'Wo',
+    who: 'Wer',
+    threads: 'Leitfäden',
+    context: 'Im Zusammenhang',
+    growsOutOf: 'Geht hervor aus',
+    leadsTo: 'Führt zu',
+    alongThreads: 'Entlang der Leitfäden',
+    before: 'Davor · {date}',
+    after: 'Danach · {date}',
+    threadBegins: 'Dieser Leitfaden beginnt hier',
+    threadLatest: 'Das jüngste Ereignis dieses Leitfadens',
+    pager: 'Zeitstrahl',
+    earlier: 'Früher · {date}',
+    later: 'Später · {date}',
+  },
+
+  sourceList: {
+    scripture: 'Heilige Schrift',
+    reader: 'Die Verweise öffnen die Stelle in der {version} bei {reader}.',
+  },
+
+  sourceCard: {
+    read: 'Die Stelle lesen',
+    about: 'Über diese Quelle',
+  },
+
+  sourceKind: {
+    scripture: 'Schrift',
+    history: 'Geschichtswerk',
+    chronicle: 'Chronik',
+    letter: 'Brief',
+    treatise: 'Abhandlung',
+    council: 'Konzil',
+    creed: 'Bekenntnis',
+    law: 'Gesetz',
+    liturgy: 'Liturgie',
+    inscription: 'Inschrift',
+    manuscript: 'Handschrift',
+    artifact: 'Artefakt',
+  },
+
+  sourceGroup: {
+    scripture: {
+      label: 'Die Heilige Schrift und ihre Fassungen',
+      note: 'Heilige Texte und ihre Fassungen, die als eigenständige Dokumente zitiert werden.',
+    },
+    inscription: {
+      label: 'Inschriften',
+      note: 'Texte, die Herrscher und Beamte ihrer Zeit in Stein hauen oder in Ton drücken ließen.',
+    },
+    artifact: { label: 'Artefakte', note: 'Gegenstände, die Zeugnis geben: Tafeln, Siegel, Monumente.' },
+    manuscript: { label: 'Handschriften', note: 'Erhaltene handschriftliche Exemplare von Texten.' },
+    chronicle: { label: 'Chroniken', note: 'Jahr für Jahr geführte Aufzeichnungen, nahe an den Ereignissen.' },
+    history: { label: 'Geschichtswerke', note: 'Erzählende Werke antiker und mittelalterlicher Geschichtsschreiber.' },
+    letter: { label: 'Briefe', note: 'Der Briefwechsel der Beteiligten.' },
+    treatise: {
+      label: 'Abhandlungen und andere Schriften',
+      note: 'Werke, die eine These oder eine Lehre darlegen.',
+    },
+    council: { label: 'Konzilien', note: 'Akten, Kanones und Dekrete von Konzilien und Synoden.' },
+    creed: { label: 'Glaubensbekenntnisse und Bekenntnisschriften', note: 'Förmliche Darlegungen des Glaubens.' },
+    law: { label: 'Gesetze, Edikte und Verträge', note: 'Rechtsakte von Herrschern und Staaten.' },
+    liturgy: { label: 'Liturgien und Regeln', note: 'Texte, die Gottesdienst und gemeinsames Leben ordnen.' },
+  },
+
+  people: {
+    title: 'Personen',
+    description: 'Alle, die im Zeitstrahl vorkommen.',
+    lead: {
+      one: '{count} Person, die im Zeitstrahl vorkommt. Die Seite versammelt die Ereignisse, an denen sie beteiligt war.',
+      other:
+        '{count} Personen, die im Zeitstrahl vorkommen. Jede Seite versammelt die Ereignisse, an denen eine Person beteiligt war.',
+    },
+    jump: 'Zu einem Buchstaben springen',
+    inTimeline: 'Im Zeitstrahl',
+  },
+
+  places: {
+    title: 'Orte',
+    description: 'Alle Orte des Zeitstrahls, nach Regionen geordnet, auf einer Karte.',
+    lead: {
+      one: '{count} Ort, an dem sich die Ereignisse des Zeitstrahls zutrugen. Der antike Name steht voran, der heutige daneben.',
+      other:
+        '{count} Orte, an denen sich die Ereignisse des Zeitstrahls zutrugen. Der antike Name steht voran, der heutige daneben.',
+    },
+    count: { one: '{count} Ort', other: '{count} Orte' },
+    notWritten: 'Noch nicht geschrieben',
+    happened: 'Was hier geschah',
+    aside: 'Lage',
+    position: 'Position',
+    certainty: 'Sicherheit',
+    north: '{degrees}° N',
+    south: '{degrees}° S',
+    east: '{degrees}° O',
+    west: '{degrees}° W',
+    coordinates: '{lat}, {lon}',
+    locationTag: 'Lage {kind}',
+    location: {
+      known: 'gesichert',
+      approximate: 'ungefähr',
+      traditional: 'traditionell',
+      disputed: 'umstritten',
+    },
+    locationNote: {
+      known: 'Die Stätte ist sicher identifiziert.',
+      approximate: 'Die gezeigte Position ist ungefähr.',
+      traditional: 'Die gezeigte Position ist die von der späteren Überlieferung festgelegte.',
+      disputed: 'Die Forschung ist uneins, wo dieser Ort lag; die gezeigte Position ist ein Vorschlag.',
+    },
+  },
+
+
+  sources: {
+    title: 'Quellen',
+    description:
+      'Die Primärquellen hinter dem Zeitstrahl: Texte, Inschriften und Artefakte, jeweils mit einem Verweis dorthin, wo sie zu lesen oder zu sehen sind.',
+    lead: {
+      one: 'Die {count} Primärquelle, die der Zeitstrahl zitiert. Sie verweist auf den vollständigen Text oder auf die Einrichtung, die das Objekt verwahrt.',
+      other:
+        'Die {count} Primärquellen, die der Zeitstrahl zitiert. Jede verweist auf den vollständigen Text oder auf die Einrichtung, die das Objekt verwahrt.',
+    },
+    jump: 'Zu einer Quellengattung springen',
+    readText: 'Den Text lesen bei {host}',
+    seeObject: 'Das Objekt ansehen bei {host}',
+    citedIn: 'Zitiert in',
+    aside: 'Über diese Quelle',
+    kind: 'Gattung',
+    author: 'Verfasser',
+    written: 'Entstanden',
+    language: 'Sprache',
+    heldBy: 'Verwahrt von',
+    edition: 'Ausgabe',
+  },
+
+  languages: {
+    Latin: 'Latein',
+    English: 'Englisch',
+    Greek: 'Griechisch',
+    German: 'Deutsch',
+    Spanish: 'Spanisch',
+    French: 'Französisch',
+    Italian: 'Italienisch',
+    Akkadian: 'Akkadisch',
+    Russian: 'Russisch',
+    Chinese: 'Chinesisch',
+    Syriac: 'Syrisch',
+    Hebrew: 'Hebräisch',
+    Aramaic: 'Aramäisch',
+    Portuguese: 'Portugiesisch',
+    Scots: 'Scots',
+    Arabic: 'Arabisch',
+    'Old French': 'Altfranzösisch',
+    Georgian: 'Georgisch',
+    "Ge'ez": 'Geʿez',
+    Egyptian: 'Ägyptisch',
+    Dutch: 'Niederländisch',
+    'Church Slavonic': 'Kirchenslawisch',
+    'Old Church Slavonic': 'Altkirchenslawisch',
+    Ukrainian: 'Ukrainisch',
+    Sabaic: 'Sabäisch',
+    Polish: 'Polnisch',
+    Japanese: 'Japanisch',
+    Coptic: 'Koptisch',
+    'Classical Chinese': 'Klassisches Chinesisch',
+    Armenian: 'Armenisch',
+    Korean: 'Koreanisch',
+    Persian: 'Persisch',
+    Czech: 'Tschechisch',
+    Hungarian: 'Ungarisch',
+    Bulgarian: 'Bulgarisch',
+    Swedish: 'Schwedisch',
+    Danish: 'Dänisch',
+    'Old English': 'Altenglisch',
+    'Middle English': 'Mittelenglisch',
+    'Old Norse': 'Altnordisch',
+    Nahuatl: 'Nahuatl',
+    Tamil: 'Tamil',
+    Malayalam: 'Malayalam',
+  },
+
+  threads: {
+    title: 'Leitfäden',
+    description: 'Erzählstränge, die sich durch den ganzen Zeitstrahl ziehen.',
+    lead: 'Erzählstränge, die die Epochen durchziehen. Wer einem von Anfang bis Ende folgt, sieht, wie Ereignisse zusammengehören, die zeitlich weit auseinanderliegen.',
+    whole: 'Der Leitfaden von Anfang bis Ende',
+    others: 'Weitere Leitfäden',
+  },
+
+  map: {
+    title: 'Karte',
+    description:
+      'Wo sich die Ereignisse des Zeitstrahls zutrugen. Schritt für Schritt durch die Epochen wandert die Geschichte über die Karte.',
+    heading: 'Wo es geschah',
+    intro:
+      'Gehen Sie die Epochen durch und sehen Sie, wo sich die Geschichte entfaltete. Eine Markierung zeigt die Ereignisse an diesem Ort.',
+    previousEra: 'Vorige Epoche',
+    nextEra: 'Nächste Epoche',
+    era: 'Epoche',
+    allEras: 'Alle Epochen',
+    failed: 'Die Karte konnte nicht geladen werden. Die Ereignisse sind unten aufgeführt.',
+    failedReload: 'Die Karte konnte nicht geladen werden. Bitte laden Sie die Seite neu.',
+    showing: 'Karte mit {places}',
+    plain: 'Karte',
+    help: 'Karte. Die Pfeiltasten verschieben, Plus und Minus zoomen. Die Markierungen führen die Ereignisse am jeweiligen Ort auf.',
+    zoomIn: 'Vergrößern',
+    zoomOut: 'Verkleinern',
+    fit: 'Karte auf die aktuellen Ereignisse einpassen',
+    pin: { one: '{place}: {count} Ereignis', other: '{place}: {count} Ereignisse' },
+    more: { one: 'und {count} weiteres', other: 'und {count} weitere' },
+  },
+
+  search: {
+    label: 'Suche',
+    input: 'Ereignisse, Personen, Orte und Quellen durchsuchen',
+    placeholder: 'Ereignisse, Personen, Orte, Quellen durchsuchen',
+    close: 'Suche schließen',
+    hint: 'Tippen Sie, um das ganze Wiki zu durchsuchen.',
+    unavailable: 'Die Suche steht in der gebauten Website zur Verfügung (npm run build, dann npm run preview).',
+    nothing: 'Nichts gefunden für „{query}“.',
+    showing: 'Die ersten {shown} von {count} Treffern.',
+    results: { one: '{count} Treffer.', other: '{count} Treffer.' },
+  },
+
+  notFound: {
+    title: 'Seite nicht gefunden',
+    heading: 'Diese Seite gibt es nicht',
+    lead: 'Vielleicht ist die Adresse falsch geschrieben, oder der Eintrag wurde umbenannt.',
+    toTimeline: 'Zum Zeitstrahl',
+    search: 'Das Wiki durchsuchen',
+  },
+
+  about: {
+    title: 'Methode und Quellen',
+    description: 'Wie {site} entsteht: was als Primärquelle gilt, wie Datierungen gekennzeichnet sind und wie sich ein Fehler melden lässt.',
+    start: 'Beginnen Sie mit dem {timeline}, folgen Sie einem {thread} oder stöbern Sie in den {sources}.',
+    startTimeline: 'Zeitstrahl',
+    startThread: 'Leitfaden',
+    startSources: 'Quellen',
+  },
+
+  translation: {
+    missing: 'Dieser Eintrag ist noch nicht übersetzt. Er wird auf {language} gezeigt.',
+    stale:
+      'Diese Übersetzung beruht auf einer früheren Fassung des Eintrags auf {language}, der seither überarbeitet wurde.',
+    original: 'Den Eintrag auf {language} lesen',
+    partial:
+      '{translated} von {count} Einträgen liegen bisher in dieser Sprache vor. Die übrigen werden auf {language} gezeigt.',
+  },
+};

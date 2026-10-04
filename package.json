@@ -1,0 +1,101 @@
+{
+  "name": "chronowiki",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "An Astro theme for history wikis built on a timeline: every event dated, placed on a map and tied to its primary sources.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christwiki/chronowiki.git"
+  },
+  "homepage": "https://github.com/christwiki/chronowiki#readme",
+  "bugs": "https://github.com/christwiki/chronowiki/issues",
+  "keywords": [
+    "astro-integration",
+    "astro-component",
+    "withastro",
+    "wiki",
+    "timeline",
+    "history",
+    "i18n"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "bin": {
+    "chronowiki": "./bin/chronowiki.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./integration.d.ts",
+      "default": "./integration.mjs"
+    },
+    "./config": "./src/config/index.ts",
+    "./content": "./src/content/collections.ts",
+    "./tools": "./src/tools.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "integration.mjs",
+    "integration.d.ts",
+    "bin",
+    "cli",
+    "src",
+    "example",
+    "docs"
+  ],
+  "workspaces": [
+    "example"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace example",
+    "build": "npm run build --workspace example",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "check": "astro check && npm run check --workspace example",
+    "map-data": "tsx scripts/build-map-data.ts"
+  },
+  "peerDependencies": {
+    "astro": "^7.3.5"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "bible-passage-reference-parser": "^4.0.0",
+    "d3-geo": "^3.1.1",
+    "d3-selection": "^3.0.0",
+    "d3-transition": "^3.0.1",
+    "d3-zoom": "^3.0.0",
+    "js-yaml": "^5.4.2",
+    "micromark": "^4.0.3",
+    "pagefind": "^1.5.2",
+    "topojson-client": "^3.1.0",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "@types/d3-geo": "^3.1.1",
+    "@types/d3-selection": "^3.0.12",
+    "@types/d3-transition": "^3.0.9",
+    "@types/d3-zoom": "^3.0.9",
+    "@types/geojson": "^7946.0.16",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^26.6.4",
+    "@types/topojson-client": "^3.1.5",
+    "@types/topojson-server": "^3.0.4",
+    "@types/topojson-simplify": "^3.0.3",
+    "astro": "^7.3.5",
+    "d3-geo-projection": "^4.0.0",
+    "sane-topojson": "^4.0.0",
+    "topojson-server": "^3.0.1",
+    "topojson-simplify": "^3.0.3",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3",
+    "world-atlas": "^2.0.2"
+  },
+  "allowScripts": {
+    "esbuild": true
+  }
+}

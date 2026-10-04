@@ -1,0 +1,100 @@
+---
+import '../styles/index.css';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { entryHref, getSite, langOf } from '../lib/site';
+
+export function getStaticPaths() {
+  return localeParams().map((params) => ({ params }));
+}
+
+const { t, code } = useI18n(Astro);
+const site = await getSite(code);
+const threads = site.threads.map((thread) => {
+  const events = site.byThread.get(thread.id) ?? [];
+  return { thread, events, first: events[0], last: events.at(-1) };
+});
+---
+
+<Base title={t('threads.title')} description={t('threads.description')} section="threads">
+  <div class="page index">
+    <header class="index__header">
+      <h1>{t('threads.title')}</h1>
+      <p class="lead">{t('threads.lead')}</p>
+    </header>
+
+    <ul class="thread-grid" role="list">
+      {
+        threads.map(({ thread, events, first, last }) => (
+          <li>
+            <a class="thread-card" href={entryHref(site, 'thread', thread.id)}>
+              <h2 lang={langOf(site, thread)}>{thread.data.title}</h2>
+              <p lang={langOf(site, thread)}>{thread.data.summary}</p>
+              <p class="meta">
+                {t('common.events', { count: events.length })}
+                {first && last && first !== last && ` · ${t('common.range', { first: first.dateLabel, last: last.dateLabel })}`}
+              </p>
+              <span class="thread-card__spark" aria-hidden="true">
+                {events.map((event) => (
+                  <span style={`background: var(--${event.eraEntry.data.colour})`} />
+                ))}
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Base>
+
+<style>
+  .thread-grid {
+    margin-top: var(--space-6);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+    gap: var(--space-4);
+  }
+
+  .thread-card {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr auto auto;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-large);
+    background: var(--surface);
+    text-decoration: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .thread-card:hover {
+    border-color: var(--rule-strong);
+    box-shadow: var(--shadow);
+  }
+
+  .thread-card h2 {
+    font-size: var(--step-1);
+  }
+
+  .thread-card p {
+    color: var(--ink-muted);
+    font-size: 0.97rem;
+    line-height: 1.45;
+  }
+
+  /* One tick per event, in its era's colour: the thread's course at a glance. */
+  .thread-card__spark {
+    margin-top: var(--space-2);
+    display: flex;
+    gap: 2px;
+    height: 6px;
+  }
+
+  .thread-card__spark span {
+    flex: 1;
+    min-width: 2px;
+    max-width: 14px;
+    border-radius: 2px;
+  }
+</style>

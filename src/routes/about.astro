@@ -1,0 +1,143 @@
+---
+import ConfidenceMark from '../components/ConfidenceMark.astro';
+import SourceCards from '../components/SourceCards.astro';
+import TranslationNotice from '../components/TranslationNotice.astro';
+import wiki from 'virtual:chronowiki/config';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { CONFIDENCE_LEVELS } from '../lib/dates';
+import { getSite, isPublished, langOf, renderBody } from '../lib/site';
+
+export function getStaticPaths() {
+  return localeParams().map((params) => ({ params }));
+}
+
+const i18n = useI18n(Astro);
+const { t, href } = i18n;
+const site = await getSite(i18n.code);
+
+/**
+ * The page's text is a content file, `src/content/pages/about.md`, translated
+ * like any entry. Three things in it are filled in here: the counts in braces,
+ * the list of date labels where `{confidence-list}` stands, and the anchor each
+ * heading names in square brackets.
+ */
+const page = site.pages.get('about');
+if (!page) {
+  throw new Error('chronowiki: src/content/pages/about.md is missing. Every wiki has a page that says how it is made; the footer links to it.');
+}
+const lang = langOf(site, page);
+const body = renderBody(site, page);
+const counts: Record<string, number> = {
+  events: site.events.filter((event) => !event.data.draft).length,
+  sources: [...site.sources.values()].filter(isPublished).length,
+  places: [...site.places.values()].filter((place) => !place.data.draft).length,
+  people: [...site.people.values()].filter((person) => !person.data.draft).length,
+};
+const html = body.html
+  .replace(/<h2>\[([a-z-]+)\]\s*/g, '<h2 id="$1">')
+  .replace(/\{(events|sources|places|people)\}/g, (_, name: string) => i18n.number(counts[name]));
+const [before, after = ''] = html.split('<p>{confidence-list}</p>');
+
+const link = (path: string, label: string) => `<a href="${href(path)}">${label}</a>`;
+const start = t('about.start', {
+  timeline: link('/', t('about.startTimeline')),
+  thread: link('/threads/', t('about.startThread')),
+  sources: link('/sources/', t('about.startSources')),
+});
+---
+
+<Base title={page.data.title} description={t('about.description', { site: wiki.name })} section="about">
+  <article class="page page--narrow about" data-pagefind-body>
+    <header>
+      <p class="label">{t('nav.about')}</p>
+      <h1 data-pagefind-meta="title" lang={lang}>{page.data.title}</h1>
+      <span data-pagefind-meta={`kind:${t('kind.page')}`} hidden></span>
+      <p class="lead" lang={lang}>{page.data.summary}</p>
+    </header>
+    <TranslationNotice entry={page} column={false} />
+
+    <div class="prose" lang={lang} set:html={before} />
+
+    <dl class="confidence-list">
+      {
+        CONFIDENCE_LEVELS.map((level) => (
+          <div>
+            <dt>
+              <ConfidenceMark confidence={level} />
+              {t(`confidence.${level}.label`)}
+            </dt>
+            <dd>
+              {t(`confidence.${level}.description`)}
+              {t(`confidence.${level}.example`) && <span class="meta">{t(`confidence.${level}.example`)}</span>}
+            </dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    <div class="prose" lang={lang} set:html={after} />
+    <div class="prose">
+      <p set:html={start} />
+    </div>
+  </article>
+  <SourceCards slot="after" ids={body.cites.map((cite) => cite.source.id)} />
+</Base>
+
+<style>
+  .about {
+    padding-top: var(--space-7);
+  }
+
+  .about header {
+    padding-bottom: var(--space-5);
+    margin-bottom: var(--space-5);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .about h1 {
+    font-size: var(--step-4);
+    margin-top: var(--space-2);
+  }
+
+  .about .lead {
+    margin-top: var(--space-4);
+    color: var(--ink-muted);
+  }
+
+  .about .prose h2 {
+    scroll-margin-top: var(--space-5);
+  }
+
+  .confidence-list {
+    margin: var(--space-5) 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .confidence-list div {
+    padding: var(--space-4);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-large);
+    background: var(--surface);
+  }
+
+  .confidence-list dt {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-family: var(--font-sans);
+    font-size: var(--ui);
+    font-weight: 600;
+    --mark-bg: var(--surface);
+  }
+
+  .confidence-list dd {
+    margin: var(--space-1) 0 0;
+  }
+
+  .confidence-list .meta {
+    display: block;
+    margin-top: var(--space-1);
+  }
+</style>

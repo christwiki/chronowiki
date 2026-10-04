@@ -1,0 +1,62 @@
+---
+import '../styles/index.css';
+import { i18nFor, localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import type { WikiDate } from '../lib/dates';
+import { entryHref, getSite, isPublished, langOf } from '../lib/site';
+
+export function getStaticPaths() {
+  return localeParams().map((params) => ({ params }));
+}
+
+const i18n = useI18n(Astro);
+const { t } = i18n;
+const site = await getSite(i18n.code);
+const people = [...site.people.values()].filter(isPublished).sort((a, b) => i18n.compare(a.data.name, b.data.name));
+
+/** People under the first letter of their name, without its accents, as the language sorts them. */
+const letters = new Map<string, typeof people>();
+for (const person of people) {
+  const letter = person.data.name.normalize('NFD').charAt(0).toLocaleUpperCase(i18n.code);
+  letters.set(letter, [...(letters.get(letter) ?? []), person]);
+}
+---
+
+<Base title={t('people.title')} description={t('people.description')} section="people">
+  <div class="page index">
+    <header class="index__header">
+      <h1>{t('people.title')}</h1>
+      <p class="lead">{t('people.lead', { count: people.length })}</p>
+      <nav class="index__letters" aria-label={t('people.jump')}>
+        {[...letters.keys()].map((letter) => <a href={`#letter-${letter}`}>{letter}</a>)}
+      </nav>
+    </header>
+
+    {
+      [...letters].map(([letter, group]) => (
+        <section class="index__group index__group--letters" aria-labelledby={`letter-${letter}`}>
+          <h2 id={`letter-${letter}`}>{letter}</h2>
+          <ul class="index__list" role="list">
+            {group.map((person) => (
+              <li lang={langOf(site, person)}>
+                <a href={entryHref(site, 'person', person.id)}>{person.data.name}</a>
+                {person.data.draft ? (
+                  <span class="draft-tag">{t('common.draft')}</span>
+                ) : (
+                  <span class="meta">
+                    {[
+                      person.data.role,
+                      i18nFor(person.i18n.lang).lifespan(person.data.born as WikiDate | undefined, person.data.died as WikiDate | undefined),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</Base>

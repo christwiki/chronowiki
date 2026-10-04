@@ -1,0 +1,149 @@
+---
+import { useI18n } from '../i18n';
+
+const { t, asset } = useI18n(Astro);
+---
+
+<dialog class="search" data-search data-pagefind-url={asset('/pagefind/pagefind.js')} aria-label={t('search.label')}>
+  <form class="search__form" method="dialog" role="search">
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      <circle cx="8.5" cy="8.5" r="5.75" fill="none" stroke="currentColor" stroke-width="1.5"></circle>
+      <path d="m13 13 4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+    </svg>
+    <label class="sr-only" for="search-input">{t('search.input')}</label>
+    <input
+      id="search-input"
+      type="search"
+      placeholder={t('search.placeholder')}
+      autocomplete="off"
+      spellcheck="false"
+      data-search-input
+    />
+    <button type="submit" class="search__close" aria-label={t('search.close')}>Esc</button>
+  </form>
+  <p class="search__status" data-search-status aria-live="polite">{t('search.hint')}</p>
+  <ol class="search__results" role="list" data-search-results></ol>
+</dialog>
+
+<script>
+  import '../scripts/search';
+</script>
+
+<style is:global>
+  .search {
+    width: min(42rem, calc(100vw - 2rem));
+    max-height: min(38rem, calc(100dvh - 4rem));
+    margin: 3rem auto auto;
+    padding: 0;
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius-large);
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+    font-family: var(--font-sans);
+    overflow: hidden;
+  }
+
+  .search[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .search::backdrop {
+    background: color-mix(in srgb, var(--ink) 35%, transparent);
+    backdrop-filter: blur(2px);
+  }
+
+  .search__form {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink-faint);
+  }
+
+  .search__form input {
+    flex: 1;
+    min-width: 0;
+    height: 2.5rem;
+    border: 0;
+    background: none;
+    outline: none;
+    font-size: 1.0625rem;
+    color: var(--ink);
+  }
+
+  .search__form input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .search__close {
+    padding: 0.2rem 0.45rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: 4px;
+    background: none;
+    font-size: 0.6875rem;
+    color: var(--ink-faint);
+  }
+
+  .search__status {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--ui-small);
+    color: var(--ink-muted);
+  }
+
+  .search__results {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 var(--space-2) var(--space-2);
+  }
+
+  .search__results:empty {
+    display: none;
+  }
+
+  .search__results a {
+    display: grid;
+    gap: 0.15rem;
+    padding: var(--space-3);
+    border-radius: var(--radius);
+    text-decoration: none;
+  }
+
+  .search__results a:hover,
+  .search__results a:focus-visible {
+    background: var(--surface-sunk);
+    outline: none;
+  }
+
+  .search__results a:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--focus);
+  }
+
+  .search__kind {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .search__title {
+    font-family: var(--font-serif);
+    font-size: 1.125rem;
+    line-height: 1.25;
+  }
+
+  .search__excerpt {
+    font-size: var(--ui-small);
+    line-height: 1.45;
+    color: var(--ink-muted);
+  }
+
+  .search__excerpt mark {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: inherit;
+    border-radius: 2px;
+  }
+</style>

@@ -1,0 +1,28 @@
+---
+import { i18nFor, useI18n } from '../i18n';
+import type { WikiDate } from '../lib/dates';
+import ConfidenceMark from './ConfidenceMark.astro';
+
+interface Props {
+  date: WikiDate;
+  /** Leave the mark out where it is drawn elsewhere, as on the timeline spine. */
+  mark?: boolean;
+  class?: string;
+  /** The language of the entry the date belongs to, where that is not the page's. */
+  lang?: string;
+}
+
+const { date, mark = true, class: className, lang } = Astro.props;
+const { t } = useI18n(Astro);
+// An entry that is still in English keeps an English date, marked as English.
+const words = lang ? i18nFor(lang) : useI18n(Astro);
+---
+
+<span
+  class:list={['date-label', className]}
+  title={`${t(`confidence.${date.confidence}.label`)}: ${t(`confidence.${date.confidence}.description`)}`}
+>
+  {mark && <ConfidenceMark confidence={date.confidence} />}
+  <span aria-hidden="true" lang={lang}>{words.date(date)}</span>
+  <span class="sr-only" lang={lang}>{words.spokenDate(date)}</span>
+</span>

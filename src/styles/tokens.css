@@ -1,0 +1,88 @@
+/*
+ * Design tokens. Every colour is declared once with light-dark(); the theme is
+ * chosen by `color-scheme`, which follows the system unless the reader picks one.
+ */
+:root {
+  color-scheme: light dark;
+
+  /* Surfaces and text */
+  --bg: light-dark(#faf7f2, #15130f);
+  --surface: light-dark(#ffffff, #1d1a16);
+  --surface-sunk: light-dark(#f2ede4, #100e0b);
+  --ink: light-dark(#1e1b18, #ede6da);
+  --ink-muted: light-dark(#5c544b, #b5ab9c);
+  --ink-faint: light-dark(#756c63, #948a7c);
+  --rule: light-dark(#e4dccf, #2f2a23);
+  --rule-strong: light-dark(#cdc2b1, #463f35);
+
+  /* The rubric: citations and primary actions, after the red ink of manuscripts */
+  --accent: light-dark(#9a2b2b, #eb9585);
+  --accent-soft: light-dark(#f7ebe7, #2c1b17);
+  --focus: light-dark(#1f5fbf, #8ab8ff);
+
+  /* One hue per era, in a continuous progression (OKLCH hue steps of 21 degrees) */
+  --era-1: light-dark(#8b432c, #eda28b);
+  --era-2: light-dark(#854a0d, #e5a979);
+  --era-3: light-dark(#795300, #d7b16f);
+  --era-4: light-dark(#685c00, #c4ba70);
+  --era-5: light-dark(#516312, #adc17c);
+  --era-6: light-dark(#336931, #93c790);
+  --era-7: light-dark(#006d4b, #7bcba7);
+  --era-8: light-dark(#006d62, #69cbbf);
+  --era-9: light-dark(#006a78, #65c9d5);
+  --era-10: light-dark(#006588, #71c4e7);
+  --era-11: light-dark(#215e92, #86bdf2);
+  --era-12: light-dark(#435796, #9eb5f5);
+  --era-13: light-dark(#5b4f91, #b6adf0);
+  --era-14: light-dark(#6e4886, #cba6e4);
+  --era-15: light-dark(#7c4275, #dca1d3);
+  --era-16: light-dark(#863f60, #e89ebd);
+
+  /* Map */
+  --map-sea: light-dark(#e2e9ea, #0d1416);
+  --map-land: light-dark(#fcfaf5, #26231d);
+  --map-coast: light-dark(#b8ad9b, #4f473b);
+  --map-water: light-dark(#bccdd0, #1c3034);
+
+  --shadow: 0 1px 2px light-dark(rgb(60 45 25 / 0.06), rgb(0 0 0 / 0.4)),
+    0 10px 30px light-dark(rgb(60 45 25 / 0.1), rgb(0 0 0 / 0.5));
+
+  /* Type */
+  --font-serif: 'Newsreader Variable', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --step--1: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-0: clamp(1.0625rem, 1.03rem + 0.18vw, 1.1875rem);
+  --step-1: clamp(1.25rem, 1.19rem + 0.3vw, 1.4375rem);
+  --step-2: clamp(1.5rem, 1.39rem + 0.55vw, 1.875rem);
+  --step-3: clamp(1.875rem, 1.66rem + 1.05vw, 2.5rem);
+  --step-4: clamp(2.25rem, 1.85rem + 2vw, 3.5rem);
+  --ui: 0.9375rem;
+  --ui-small: 0.8125rem;
+
+  /* Space */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+
+  --radius: 6px;
+  --radius-large: 12px;
+  --measure: 68ch;
+  --page: 76rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --header-height: 3.5rem;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}

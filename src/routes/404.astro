@@ -1,0 +1,37 @@
+---
+/**
+ * A static host serves this one page for every address that does not exist,
+ * whatever language the address was in. For an address in another language it
+ * fetches that language's own version of the page (`/<code>/404/`) and shows
+ * it in place of this one, so the reader gets the whole page in their language.
+ * Without scripts, or if that fails, the English page stands.
+ */
+import NotFound from '../components/NotFound.astro';
+import { activeLocales, DEFAULT_LOCALE, i18nFor } from '../i18n';
+import Base from '../layouts/Base.astro';
+
+const { t } = i18nFor(DEFAULT_LOCALE);
+const others = activeLocales()
+  .filter((locale) => locale.code !== DEFAULT_LOCALE)
+  .map((locale) => i18nFor(locale.code).href('/'));
+---
+
+<Base title={t('notFound.title')}>
+  <NotFound />
+  <script is:inline define:vars={{ others }}>
+    const prefix = others.find((candidate) => location.pathname.startsWith(candidate));
+    if (prefix) {
+      document.documentElement.style.visibility = 'hidden';
+      fetch(prefix + '404/')
+        .then((response) => (response.ok ? response.text() : Promise.reject(new Error(String(response.status)))))
+        .then((html) => {
+          document.open();
+          document.write(html);
+          document.close();
+        })
+        .catch(() => {
+          document.documentElement.style.visibility = '';
+        });
+    }
+  </script>
+</Base>

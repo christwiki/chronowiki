@@ -1,0 +1,116 @@
+---
+import { useI18n } from '../i18n';
+import { entryHref, getSite, langOf, type EraEntry, type EventView } from '../lib/site';
+import EventCard from './EventCard.astro';
+
+interface Props {
+  era: EraEntry;
+  events: EventView[];
+}
+
+const { era, events } = Astro.props;
+const site = await getSite(useI18n(Astro).code);
+const lang = langOf(site, era);
+---
+
+<section
+  class="era"
+  id={`era-${era.id}`}
+  data-era={era.id}
+  aria-labelledby={`era-title-${era.id}`}
+  style={`--era-colour: var(--${era.data.colour})`}
+>
+  <header class="era__header" lang={lang}>
+    <p class="era__span">{era.data.span}</p>
+    <h2 id={`era-title-${era.id}`}>
+      <a href={entryHref(site, 'era', era.id)}>{era.data.title}</a>
+    </h2>
+    <p class="era__summary">{era.data.summary}</p>
+  </header>
+  <ol class="events" role="list">
+    {
+      events.map((event) => (
+        <li>
+          <EventCard event={event} />
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<style>
+  .era {
+    --spine-gutter: 2rem;
+    padding-top: var(--space-7);
+    scroll-margin-top: var(--space-6);
+  }
+
+  .era__header {
+    padding-inline-start: var(--spine-gutter);
+    padding-bottom: var(--space-4);
+    position: relative;
+  }
+
+  /* The era's colour runs down the spine from its heading. */
+  .era__header::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(var(--spine-gutter) / 2 - 1px);
+    top: 0.35rem;
+    bottom: 0;
+    width: 2px;
+    background: var(--era-colour);
+    border-radius: 2px 2px 0 0;
+  }
+
+  .era__span {
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--era-colour);
+  }
+
+  .era__header h2 {
+    font-size: var(--step-3);
+    margin-top: var(--space-1);
+  }
+
+  .era__header h2 a {
+    text-decoration: none;
+  }
+
+  .era__header h2 a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 0.05em;
+    text-underline-offset: 0.16em;
+  }
+
+  .era__summary {
+    margin-top: var(--space-2);
+    color: var(--ink-muted);
+    max-width: 60ch;
+  }
+
+  .events {
+    position: relative;
+  }
+
+  .events::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(var(--spine-gutter) / 2 - 1px);
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: color-mix(in srgb, var(--era-colour) 40%, transparent);
+  }
+
+  @media (max-width: 40rem) {
+    .era {
+      --spine-gutter: 1.5rem;
+      scroll-margin-top: 3.5rem;
+    }
+  }
+</style>

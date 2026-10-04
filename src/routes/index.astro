@@ -1,0 +1,286 @@
+---
+import '../styles/map.css';
+import ConfidenceMark from '../components/ConfidenceMark.astro';
+import EraRail from '../components/EraRail.astro';
+import EraSection from '../components/EraSection.astro';
+import FilterBar from '../components/FilterBar.astro';
+import wiki from 'virtual:chronowiki/config';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { CONFIDENCE_LEVELS } from '../lib/dates';
+import { getSite } from '../lib/site';
+
+export function getStaticPaths() {
+  return localeParams().map((params) => ({ params }));
+}
+
+const i18n = useI18n(Astro);
+const { t, href, code } = i18n;
+const site = await getSite(code);
+const eras = site.eras.filter((era) => site.byEra.has(era.id));
+const { coverage } = site;
+---
+
+<Base section="timeline">
+  <div class="home">
+    <header class="hero">
+      <h1>{t('home.title')}</h1>
+      <p class="hero__lead">{t('home.lead', { count: site.events.length })}</p>
+      <ul class="legend" role="list" aria-label={t('home.legend')}>
+        {
+          CONFIDENCE_LEVELS.map((level) => (
+            <li title={t(`confidence.${level}.description`)}>
+              <ConfidenceMark confidence={level} />
+              {t(`confidence.${level}.label`)}
+            </li>
+          ))
+        }
+        <li><a href={href('/about/#confidence')}>{t('home.legendMore')}</a></li>
+      </ul>
+      {
+        coverage.translated < coverage.total && (
+          <p class="translation-notice" data-translation="partial">
+            {t('translation.partial', { translated: coverage.translated, count: coverage.total, language: i18n.originalLanguage })}
+          </p>
+        )
+      }
+    </header>
+
+    <div class="timeline-layout">
+      <EraRail />
+      <div class="timeline" data-timeline>
+        <FilterBar />
+        {eras.map((era) => <EraSection era={era} events={site.byEra.get(era.id) ?? []} />)}
+        <p class="timeline__end">
+          {t('home.end')} <a href={href('/about/')}>{t('home.endLink', { site: wiki.name })}</a>.
+        </p>
+      </div>
+      <aside
+        class="map-panel"
+        id="map-panel"
+        aria-label={t('home.mapPanel')}
+        data-map-panel
+        data-map-data={href('/data/map.json')}
+      >
+        <div class="map-panel__map" data-map></div>
+        <p class="map__caption" data-map-caption></p>
+        <button class="map-panel__close" type="button" data-map-close aria-label={t('home.mapClose')}>×</button>
+        <a class="map-panel__full" href={href('/map/')}>{t('home.mapFull')}</a>
+      </aside>
+    </div>
+  </div>
+
+  <button class="map-toggle" type="button" data-map-toggle aria-expanded="false" aria-controls="map-panel" hidden>
+    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+      <path
+        d="M10 17.5s5.5-5 5.5-9.25a5.5 5.5 0 1 0-11 0C4.5 12.5 10 17.5 10 17.5Z"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linejoin="round"></path>
+      <circle cx="10" cy="8.25" r="1.75" fill="currentColor"></circle>
+    </svg>
+    {t('home.mapButton')}
+  </button>
+
+  <script>
+    // The map button only makes sense once the script that opens the map runs.
+    document.querySelector<HTMLElement>('[data-map-toggle]')!.hidden = false;
+    import('../scripts/timeline');
+  </script>
+</Base>
+
+<style>
+  .home {
+    width: min(100% - 2 * var(--gutter), 96rem);
+    margin-inline: auto;
+  }
+
+  .hero {
+    padding-block: var(--space-7) var(--space-5);
+    max-width: 52rem;
+  }
+
+  .hero h1 {
+    font-size: var(--step-4);
+  }
+
+  .hero__lead {
+    margin-top: var(--space-4);
+    font-size: var(--step-1);
+    line-height: 1.4;
+    color: var(--ink-muted);
+    max-width: 44rem;
+  }
+
+  .legend {
+    margin-top: var(--space-5);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+    color: var(--ink-muted);
+  }
+
+  .legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+  }
+
+  .timeline-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timeline {
+    min-width: 0;
+    max-width: 46rem;
+    padding-bottom: var(--space-8);
+  }
+
+  .timeline__end {
+    margin-top: var(--space-7);
+    padding-inline-start: 2rem;
+    font-family: var(--font-sans);
+    font-size: var(--ui);
+    color: var(--ink-muted);
+  }
+
+  /* Below the three-column width the map is a sheet that slides up from the bottom. */
+  .map-panel {
+    display: none;
+    position: fixed;
+    z-index: 40;
+    inset: auto 0 0 0;
+    height: min(70vh, 34rem);
+    padding: var(--space-3);
+    background: var(--bg);
+    border-top: 1px solid var(--rule-strong);
+    border-radius: var(--radius-large) var(--radius-large) 0 0;
+    box-shadow: var(--shadow);
+  }
+
+  .map-panel.is-open {
+    display: block;
+  }
+
+  /* In the sheet the map has the reader's whole attention, so every touch belongs to it. */
+  .map-panel.is-open :global(.map__svg) {
+    touch-action: none;
+  }
+
+  .map-panel__map {
+    width: 100%;
+    height: 100%;
+  }
+
+  .map-panel.is-failed .map-panel__map {
+    display: grid;
+    place-items: center;
+    padding: var(--space-5);
+    border: 1px dashed var(--rule-strong);
+    border-radius: var(--radius-large);
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+    color: var(--ink-muted);
+    text-align: center;
+  }
+
+  .map-panel__close {
+    position: absolute;
+    inset-inline-start: var(--space-5);
+    top: var(--space-5);
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    font-family: var(--font-sans);
+    font-size: 1.25rem;
+    line-height: 1;
+    color: var(--ink-muted);
+    box-shadow: var(--shadow);
+  }
+
+  .map-panel__full {
+    position: absolute;
+    inset-inline-end: var(--space-5);
+    bottom: var(--space-5);
+    padding: 0.3rem 0.6rem;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+  }
+
+  .map-panel :global(.map__caption) {
+    inset-inline-start: var(--space-5);
+    bottom: var(--space-5);
+    max-width: calc(100% - 12rem);
+  }
+
+  .map-toggle {
+    position: fixed;
+    z-index: 35;
+    inset-inline-end: var(--gutter);
+    bottom: var(--space-5);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.65rem 1.1rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--font-sans);
+    font-size: var(--ui);
+    font-weight: 550;
+    box-shadow: var(--shadow);
+  }
+
+  @media (min-width: 62rem) {
+    .timeline-layout {
+      grid-template-columns: 12.5rem minmax(0, 46rem);
+      column-gap: var(--space-6);
+    }
+  }
+
+  @media (min-width: 80rem) {
+    .timeline-layout {
+      grid-template-columns: 12.5rem minmax(0, 44rem) minmax(20rem, 1fr);
+    }
+
+    .map-panel {
+      display: block;
+      position: sticky;
+      inset: auto;
+      top: 0;
+      z-index: auto;
+      height: 100vh;
+      height: 100dvh;
+      padding: var(--space-5) 0;
+      background: none;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .map-panel__close,
+    .map-toggle {
+      display: none;
+    }
+
+    .map-panel__full {
+      inset-inline-end: var(--space-3);
+      bottom: calc(var(--space-5) + var(--space-3));
+    }
+
+    .map-panel :global(.map__caption) {
+      inset-inline-start: var(--space-3);
+      bottom: calc(var(--space-5) + var(--space-3));
+    }
+  }
+</style>

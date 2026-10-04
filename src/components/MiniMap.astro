@@ -1,0 +1,55 @@
+---
+import '../styles/map.css';
+import { useI18n } from '../i18n';
+import { getSite } from '../lib/site';
+
+interface Props {
+  /** Place ids to show. */
+  places: string[];
+}
+
+const { places } = Astro.props;
+const i18n = useI18n(Astro);
+const site = await getSite(i18n.code);
+const shown = places.flatMap((id) => {
+  const place = site.places.get(id);
+  return place && !(place.data.lat === 0 && place.data.lon === 0) ? place : [];
+});
+const names = shown.map((place) => place.data.name);
+const label = names.length > 0 ? i18n.t('map.showing', { places: i18n.list(names) }) : i18n.t('map.plain');
+---
+
+{
+  shown.length > 0 && (
+    <div
+      class="mini-map"
+      role="img"
+      aria-label={label}
+      data-mini-map
+      data-places={shown.map((p) => p.id).join(' ')}
+      data-map-data={i18n.href('/data/map.json')}
+    />
+  )
+}
+
+<script>
+  import { createMap } from '../scripts/map';
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-mini-map]')) {
+    const { places = '', mapData = '' } = root.dataset;
+    createMap(root, { dataUrl: mapData, interactive: false, only: places.split(' ') }).catch(() => {
+      // Without the map the place names below it still say where the event happened.
+      root.hidden = true;
+    });
+  }
+</script>
+
+<style>
+  .mini-map {
+    aspect-ratio: 4 / 3;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-large);
+    background: var(--map-sea);
+    overflow: hidden;
+  }
+</style>

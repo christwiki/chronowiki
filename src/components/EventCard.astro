@@ -1,0 +1,159 @@
+---
+import { useI18n } from '../i18n';
+import { entryHref, getSite, keyCitations, langOf, regionsOf, renderSummary, type EventView } from '../lib/site';
+import ConfidenceMark from './ConfidenceMark.astro';
+import DateLabel from './DateLabel.astro';
+
+interface Props {
+  event: EventView;
+}
+
+const { event } = Astro.props;
+const { t, code } = useI18n(Astro);
+const site = await getSite(code);
+const draft = event.data.draft;
+const lang = langOf(site, event.entry);
+const placeNames = event.places.flatMap((id) => site.places.get(id)?.data.name ?? []);
+const peopleNames = event.people.flatMap((id) => site.people.get(id)?.data.name ?? []);
+const citations = draft ? [] : keyCitations(site, event);
+const summary = draft ? '' : renderSummary(site, event.entry, event.data.summary);
+/** What the word filter matches against. Both kinds of apostrophe and quotation mark must find the same card. */
+const plain = (text: string) => text.toLocaleLowerCase(code).replace(/[‘’‚]/g, "'").replace(/[“”„]/g, '"');
+---
+
+<article
+  class="event-card"
+  id={`e-${event.id}`}
+  data-id={event.id}
+  data-era={event.era}
+  data-year={event.date.start}
+  data-places={event.places.join(' ')}
+  data-regions={regionsOf(site, event).join(' ')}
+  data-threads={event.threads.join(' ')}
+  data-confidence={event.date.confidence}
+  data-search={plain([event.title, event.data.summary, ...placeNames, ...peopleNames].join(' '))}
+>
+  <ConfidenceMark confidence={event.date.confidence} class="event-card__mark" />
+  <DateLabel date={event.date} mark={false} class="event-card__date" lang={lang} />
+  <div class="event-card__body">
+    <h3 class="event-card__title">
+      <a href={entryHref(site, 'event', event.id)} lang={lang}>{event.title}</a>
+      {draft && <span class="draft-tag">{t('common.draft')}</span>}
+    </h3>
+    {summary && <p class="event-card__summary" lang={lang} set:html={summary} />}
+    {
+      (placeNames.length > 0 || citations.length > 0) && (
+        <p class="event-card__meta">
+          {placeNames.length > 0 && <span class="event-card__places">{placeNames.slice(0, 3).join(' · ')}</span>}
+          {citations.length > 0 && <span class="event-card__sources" lang={lang}>{citations.join(' · ')}</span>}
+        </p>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  .event-card {
+    --mark-bg: var(--bg);
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--spine-gutter) minmax(0, 1fr);
+    grid-template-areas: 'mark date' '. body';
+    column-gap: 0;
+    padding-block: var(--space-3);
+    border-radius: var(--radius);
+    container-type: inline-size;
+  }
+
+  .event-card :global(.event-card__mark) {
+    grid-area: mark;
+    justify-self: center;
+    align-self: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .event-card :global(.event-card__date) {
+    grid-area: date;
+    font-size: var(--ui-small);
+    font-weight: 600;
+    color: var(--era-colour);
+    letter-spacing: 0.01em;
+  }
+
+  .event-card__body {
+    grid-area: body;
+    min-width: 0;
+  }
+
+  .event-card__title {
+    font-size: var(--step-1);
+    font-weight: 500;
+    line-height: 1.2;
+    margin-top: 0.15rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  .event-card__title a {
+    text-decoration: none;
+  }
+
+  /* The whole card is the link target. */
+  .event-card__title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .event-card:hover .event-card__title a,
+  .event-card__title a:focus-visible {
+    text-decoration: underline;
+    text-decoration-thickness: 0.06em;
+    text-underline-offset: 0.18em;
+  }
+
+  .event-card__title a:focus-visible {
+    outline: none;
+  }
+
+  .event-card:has(a:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .event-card.is-highlighted,
+  .event-card:hover {
+    background: color-mix(in srgb, var(--era-colour) 7%, transparent);
+  }
+
+  .event-card.is-highlighted,
+  .event-card:hover {
+    --mark-bg: color-mix(in srgb, var(--era-colour) 7%, var(--bg));
+  }
+
+  .event-card__summary {
+    margin-top: var(--space-1);
+    color: var(--ink-muted);
+    font-size: 0.96em;
+    line-height: 1.45;
+    max-width: 62ch;
+  }
+
+  .event-card__meta {
+    margin-top: var(--space-2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem var(--space-4);
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+    color: var(--ink-faint);
+  }
+
+  .event-card__sources {
+    color: var(--accent);
+  }
+</style>

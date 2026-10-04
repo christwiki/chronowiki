@@ -1,0 +1,85 @@
+---
+import { useI18n } from '../i18n';
+import type { EntryI18n } from '../lib/site';
+import TranslationNotice from './TranslationNotice.astro';
+
+interface Props {
+  /** Small label above the title, linking back to the index. */
+  kicker: string;
+  kickerHref: string;
+  title: string;
+  lead?: string;
+  /** Pagefind result type, shown in search results. */
+  kind: string;
+  draft?: boolean;
+  /** The entry, so that the header can say when its words are not in the page's language. */
+  entry: { i18n: EntryI18n };
+}
+
+const { kicker, kickerHref, title, lead, kind, draft = false, entry } = Astro.props;
+const i18n = useI18n(Astro);
+const { t } = i18n;
+const lang = entry.i18n.lang === i18n.code ? undefined : entry.i18n.lang;
+---
+
+<header class="entry-header page">
+  <nav class="entry-header__kicker" aria-label={t('nav.breadcrumb')}>
+    <a href={kickerHref}>{kicker}</a>
+  </nav>
+  <h1 data-pagefind-meta="title" lang={lang}>{title}</h1>
+  <span data-pagefind-meta={`kind:${kind}`} hidden></span>
+  <div class="entry-header__facts"><slot name="facts" /></div>
+  {draft ? <p class="lead">{t('common.notWritten')}</p> : lead && <p class="lead" lang={lang}>{lead}</p>}
+  <slot />
+</header>
+<TranslationNotice entry={entry} />
+
+<style>
+  .entry-header {
+    padding-top: var(--space-7);
+    padding-bottom: var(--space-5);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .entry-header__kicker {
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .entry-header__kicker a {
+    text-decoration: none;
+  }
+
+  .entry-header__kicker a:hover {
+    text-decoration: underline;
+  }
+
+  .entry-header h1 {
+    margin-top: var(--space-2);
+    max-width: 24ch;
+  }
+
+  .entry-header__facts {
+    margin-top: var(--space-3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    font-family: var(--font-sans);
+    font-size: var(--ui);
+    color: var(--ink-muted);
+  }
+
+  .entry-header__facts:empty {
+    display: none;
+  }
+
+  .entry-header .lead {
+    margin-top: var(--space-4);
+    max-width: 46rem;
+    color: var(--ink-muted);
+  }
+</style>

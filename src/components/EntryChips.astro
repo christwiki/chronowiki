@@ -1,0 +1,30 @@
+---
+import { useI18n } from '../i18n';
+import type { LinkType } from '../lib/prose';
+import { getSite, linkFor } from '../lib/site';
+
+interface Props {
+  type: LinkType;
+  ids: string[];
+}
+
+const { type, ids } = Astro.props;
+const site = await getSite(useI18n(Astro).code);
+const links = ids.flatMap((id) => linkFor(site, type, id) ?? []);
+---
+
+<ul class="chips" role="list">
+  {
+    links.map((link) => (
+      <li>
+        {link.href ? (
+          <a class="chip" href={link.href}>
+            {link.label}
+          </a>
+        ) : (
+          <span class="chip chip--plain">{link.label}</span>
+        )}
+      </li>
+    ))
+  }
+</ul>

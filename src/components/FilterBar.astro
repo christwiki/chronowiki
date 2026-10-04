@@ -1,0 +1,218 @@
+---
+import wiki from 'virtual:chronowiki/config';
+import { useI18n } from '../i18n';
+import { CONFIDENCE_LEVELS } from '../lib/dates';
+import { getSite } from '../lib/site';
+
+const { t, code, region } = useI18n(Astro);
+const site = await getSite(code);
+const total = site.events.length;
+
+const usedRegions = new Set(site.events.flatMap((e) => e.places.flatMap((id) => site.places.get(id)?.data.region ?? [])));
+const usedThreads = new Set(site.events.flatMap((e) => e.threads));
+
+const groups = [
+  {
+    key: 'era',
+    label: t('filter.era'),
+    options: site.eras.filter((era) => site.byEra.has(era.id)).map((era) => ({ value: era.id, label: era.data.title })),
+  },
+  {
+    key: 'thread',
+    label: t('filter.thread'),
+    options: site.threads.filter((thread) => usedThreads.has(thread.id)).map((thread) => ({ value: thread.id, label: thread.data.title })),
+  },
+  {
+    key: 'region',
+    label: t('filter.region'),
+    options: wiki.regions.filter((id) => usedRegions.has(id)).map((id) => ({ value: id, label: region(id) })),
+  },
+  {
+    key: 'confidence',
+    label: t('filter.dating'),
+    options: CONFIDENCE_LEVELS.map((level) => ({ value: level, label: t(`confidence.${level}.label`) })),
+  },
+];
+---
+
+<form class="filter-bar" data-filter-bar hidden role="search" aria-label={t('filter.label')}>
+  <label class="filter-bar__search">
+    <span class="sr-only">{t('filter.byWord')}</span>
+    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+      <path d="M3 5h14M6 10h8M8.5 15h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+    </svg>
+    <input type="search" name="q" placeholder={t('filter.placeholder')} autocomplete="off" />
+  </label>
+
+  {
+    groups.map((group) => (
+      <details class="filter-group" data-filter-group={group.key}>
+        <summary>
+          {group.label}
+          <span class="filter-group__count" data-filter-count hidden />
+        </summary>
+        <fieldset>
+          <legend class="sr-only">{group.label}</legend>
+          {group.options.map((option) => (
+            <label>
+              <input type="checkbox" name={group.key} value={option.value} />
+              {option.label}
+            </label>
+          ))}
+        </fieldset>
+      </details>
+    ))
+  }
+
+  <p class="filter-bar__status">
+    <span data-filter-status aria-live="polite">{t('filter.count', { count: total })}</span>
+    <button type="reset" data-filter-clear hidden>{t('filter.clear')}</button>
+  </p>
+</form>
+
+<style>
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block: var(--space-3);
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+  }
+
+  .filter-bar__search {
+    flex: 1 1 14rem;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.25rem;
+    padding-inline: var(--space-3);
+    border: 1px solid var(--rule-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink-faint);
+  }
+
+  .filter-bar__search:focus-within {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+
+  .filter-bar__search input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: none;
+    outline: none;
+    color: var(--ink);
+    font-size: var(--ui);
+  }
+
+  .filter-group {
+    position: relative;
+  }
+
+  .filter-group summary {
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-height: 2.25rem;
+    padding-inline: var(--space-3);
+    border: 1px solid var(--rule-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink-muted);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .filter-group summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .filter-group summary::after {
+    content: '';
+    width: 0.4em;
+    height: 0.4em;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-0.12em) rotate(45deg);
+  }
+
+  .filter-group[open] summary,
+  .filter-group.is-set summary {
+    color: var(--ink);
+    border-color: var(--ink-faint);
+  }
+
+  .filter-group__count {
+    min-width: 1.25rem;
+    padding: 0.05rem 0.3rem;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--bg);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .filter-group fieldset {
+    position: absolute;
+    z-index: 30;
+    inset-inline-start: 0;
+    top: calc(100% + 0.35rem);
+    width: max-content;
+    max-width: min(20rem, calc(100vw - 2 * var(--gutter)));
+    max-height: min(22rem, 60vh);
+    overflow-y: auto;
+    margin: 0;
+    padding: var(--space-2);
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius-large);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    display: grid;
+    gap: 1px;
+  }
+
+  .filter-group label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.4rem 0.5rem;
+    border-radius: var(--radius);
+    font-size: var(--ui);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .filter-group label:hover {
+    background: var(--surface-sunk);
+  }
+
+  .filter-group input {
+    accent-color: var(--accent);
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .filter-bar__status {
+    flex: 1 0 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    color: var(--ink-muted);
+  }
+
+  .filter-bar__status button {
+    border: 0;
+    background: none;
+    padding: 0;
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+</style>

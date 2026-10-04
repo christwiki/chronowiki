@@ -1,0 +1,8 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "types": ["node", "astro/client"]
+  },
+  "include": ["src", "cli", "scripts", "tests", "integration.d.ts", "vitest.config.ts", "playwright.config.ts"],
+  "exclude": ["example", "node_modules"]
+}

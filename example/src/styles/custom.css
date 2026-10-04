@@ -1,0 +1,10 @@
+/*
+ * The wiki's own styles, loaded after the theme's (see astro.config.mjs).
+ * Redefine any of the theme's custom properties here. They are all listed in
+ * the theme's src/styles/tokens.css; each colour is given for light and dark.
+ *
+ * :root {
+ *   --accent: light-dark(#1f5fbf, #8ab8ff);
+ *   --font-serif: 'Georgia', serif;
+ * }
+ */

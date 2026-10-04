@@ -1,0 +1,221 @@
+---
+import '../styles/map.css';
+import EventList from '../components/EventList.astro';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { entryHref, getSite, langOf } from '../lib/site';
+
+export function getStaticPaths() {
+  return localeParams().map((params) => ({ params }));
+}
+
+const { t, href, arrow, code } = useI18n(Astro);
+const site = await getSite(code);
+const eras = site.eras.filter((era) => site.byEra.has(era.id));
+---
+
+<Base title={t('map.title')} description={t('map.description')} section="map">
+  <div class="map-page">
+    <header class="map-page__header">
+      <h1>{t('map.heading')}</h1>
+      <p class="meta">{t('map.intro')}</p>
+      <div class="era-stepper" data-era-stepper hidden>
+        <button type="button" data-step="-1" aria-label={t('map.previousEra')}>{arrow.back}</button>
+        <label>
+          <span class="sr-only">{t('map.era')}</span>
+          <select data-era-select>
+            <option value="">{t('map.allEras')}</option>
+            {eras.map((era) => <option value={era.id}>{era.data.title} · {era.data.span}</option>)}
+          </select>
+        </label>
+        <button type="button" data-step="1" aria-label={t('map.nextEra')}>{arrow.forward}</button>
+      </div>
+    </header>
+
+    <div
+      class="map-page__map"
+      data-full-map
+      data-map-data={href('/data/map.json')}
+      data-map-failed={t('map.failed')}
+    >
+    </div>
+
+    <div class="map-page__list" aria-live="polite">
+      {
+        eras.map((era) => (
+          <section
+            data-era-list={era.id}
+            data-events={(site.byEra.get(era.id) ?? []).map((e) => e.id).join(' ')}
+            style={`--era-colour: var(--${era.data.colour})`}
+          >
+            <h2 lang={langOf(site, era)}>
+              <a href={entryHref(site, 'era', era.id)}>{era.data.title}</a>
+            </h2>
+            <p class="meta" lang={langOf(site, era)}>{era.data.span}</p>
+            <EventList events={site.byEra.get(era.id) ?? []} />
+          </section>
+        ))
+      }
+    </div>
+  </div>
+
+  <script>
+    import { createMap } from '../scripts/map';
+
+    const root = document.querySelector<HTMLElement>('[data-full-map]')!;
+    const stepper = document.querySelector<HTMLElement>('[data-era-stepper]')!;
+    const select = document.querySelector<HTMLSelectElement>('[data-era-select]')!;
+    const lists = [...document.querySelectorAll<HTMLElement>('[data-era-list]')];
+    const idsOf = (list: HTMLElement) => (list.dataset.events ?? '').split(' ').filter(Boolean);
+    const all = lists.flatMap(idsOf);
+
+    createMap(root, { dataUrl: root.dataset.mapData!, wheelZoom: 'always' })
+      .then((map) => {
+        stepper.hidden = false;
+
+        function show(era: string, updateUrl = true) {
+          const chosen = lists.find((list) => list.dataset.eraList === era);
+          const ids = chosen ? idsOf(chosen) : all;
+          for (const list of lists) list.hidden = Boolean(chosen) && list !== chosen;
+          map.setFilter(chosen ? new Set(ids) : null);
+          map.setVisible(ids);
+          map.fitEvents(ids, true);
+          select.value = era;
+          if (updateUrl) history.replaceState(null, '', era ? `?era=${era}` : location.pathname);
+        }
+
+        select.addEventListener('change', () => show(select.value));
+        stepper.addEventListener('click', (event) => {
+          const button = (event.target as Element).closest<HTMLButtonElement>('[data-step]');
+          if (!button) return;
+          const next = select.selectedIndex + Number(button.dataset.step);
+          if (next >= 0 && next < select.options.length) show(select.options[next].value);
+        });
+
+        // Hovering an event in the list shows where it happened.
+        for (const list of lists) {
+          const links = [...list.querySelectorAll<HTMLAnchorElement>('a.event-list__title')];
+          idsOf(list).forEach((id, index) => {
+            const link = links[index];
+            link?.addEventListener('pointerenter', () => map.highlight(id));
+            link?.addEventListener('pointerleave', () => map.highlight(null));
+            link?.addEventListener('focus', () => map.highlight(id));
+            link?.addEventListener('blur', () => map.highlight(null));
+          });
+        }
+
+        show(new URLSearchParams(location.search).get('era') ?? '', false);
+      })
+      .catch(() => {
+        root.textContent = root.dataset.mapFailed ?? '';
+      });
+  </script>
+</Base>
+
+<style>
+  .map-page {
+    width: min(100% - 2 * var(--gutter), 96rem);
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    padding-top: var(--space-5);
+  }
+
+  .map-page__header h1 {
+    font-size: var(--step-3);
+  }
+
+  .map-page__header .meta {
+    margin-top: var(--space-1);
+    font-size: var(--ui);
+  }
+
+  .era-stepper {
+    margin-top: var(--space-4);
+    display: flex;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--ui);
+  }
+
+  .era-stepper label {
+    flex: 1;
+    min-width: 0;
+    max-width: 30rem;
+  }
+
+  .era-stepper select,
+  .era-stepper button {
+    height: 2.5rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .era-stepper select {
+    width: 100%;
+    padding-inline: var(--space-3);
+  }
+
+  .era-stepper button {
+    width: 2.5rem;
+  }
+
+  .era-stepper button:hover {
+    background: var(--surface-sunk);
+  }
+
+  .map-page__map {
+    height: min(68vh, 44rem);
+    min-height: 20rem;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-sans);
+    font-size: var(--ui);
+    color: var(--ink-muted);
+  }
+
+  .map-page__list {
+    display: grid;
+    gap: var(--space-6);
+    align-content: start;
+  }
+
+  .map-page__list h2 {
+    font-size: var(--step-1);
+  }
+
+  .map-page__list h2 a {
+    text-decoration: none;
+  }
+
+  .map-page__list h2 a:hover {
+    text-decoration: underline;
+  }
+
+  .map-page__list .meta {
+    color: var(--era-colour);
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+  }
+
+  @media (min-width: 68rem) {
+    .map-page {
+      grid-template-columns: minmax(0, 1fr) 24rem;
+      grid-template-rows: auto 1fr;
+      column-gap: var(--space-6);
+    }
+
+    .map-page__header {
+      grid-column: 1 / -1;
+    }
+
+    .map-page__map {
+      position: sticky;
+      top: var(--space-4);
+      height: calc(100vh - 2 * var(--space-4));
+      height: calc(100dvh - 2 * var(--space-4));
+    }
+  }
+</style>

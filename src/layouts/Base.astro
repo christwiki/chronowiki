@@ -1,0 +1,98 @@
+---
+import '../styles/tokens.css';
+import '../styles/base.css';
+import '../styles/components.css';
+import '../styles/prose.css';
+// The wiki's own stylesheets come last, so they can redefine the theme's colours and typefaces.
+import 'virtual:chronowiki/css';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import SearchDialog from '../components/SearchDialog.astro';
+import wiki from 'virtual:chronowiki/config';
+import defaultIcon from '../assets/favicon.svg?url';
+import { DEFAULT_LOCALE, useI18n } from '../i18n';
+
+interface Props {
+  /** Page title without the site name. Omit on the home page. */
+  title?: string;
+  description?: string;
+  /** Path of the current section, used to mark the active navigation item. */
+  section?: string;
+}
+
+const i18n = useI18n(Astro);
+const { t } = i18n;
+const { title, description = t('site.description'), section } = Astro.props;
+const fullTitle = title ? `${title} · ${wiki.name}` : `${wiki.name}: ${t('site.tagline')}`;
+const absolute = (path: string) => new URL(path, Astro.site).href;
+const canonical = absolute(Astro.url.pathname);
+/** The wiki's own icon from its public folder, or the theme's mark. */
+const icon = wiki.favicon ? i18n.asset(wiki.favicon) : defaultIcon;
+const alternates = i18n.alternates(Astro.url.pathname);
+
+/** The words the scripts in the browser need. They have no other access to the messages. */
+const { messages } = i18n.locale;
+const forScripts = {
+  locale: i18n.code,
+  messages: {
+    map: messages.map,
+    search: messages.search,
+    filter: messages.filter,
+    places: { locationTag: messages.places.locationTag, location: messages.places.location },
+  },
+};
+---
+
+<!doctype html>
+<html lang={i18n.code} dir={i18n.dir}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {
+      alternates.length > 1 &&
+        alternates.map((alternate) => <link rel="alternate" hreflang={alternate.code} href={absolute(alternate.href)} />)
+    }
+    {
+      alternates.length > 1 && (
+        <link
+          rel="alternate"
+          hreflang="x-default"
+          href={absolute(alternates.find((alternate) => alternate.code === DEFAULT_LOCALE)!.href)}
+        />
+      )
+    }
+    <link rel="icon" href={icon} type={!wiki.favicon || wiki.favicon.endsWith('.svg') ? 'image/svg+xml' : undefined} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={wiki.name} />
+    <meta property="og:title" content={title ?? wiki.name} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={i18n.code} />
+    <meta name="theme-color" content="#faf7f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#15130f" media="(prefers-color-scheme: dark)" />
+    <script is:inline>
+      // Apply a stored theme choice before first paint. Without one the system setting applies.
+      try {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
+    <script type="application/json" id="i18n" set:html={JSON.stringify(forScripts).replace(/</g, '\\u003c')} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t('nav.skip')}</a>
+    <Header section={section} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+    <SearchDialog />
+    <slot name="after" />
+    <script>
+      import '../scripts/theme';
+    </script>
+  </body>
+</html>

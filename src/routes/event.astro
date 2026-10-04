@@ -1,0 +1,444 @@
+---
+import ConfidenceMark from '../components/ConfidenceMark.astro';
+import DateLabel from '../components/DateLabel.astro';
+import EntryChips from '../components/EntryChips.astro';
+import EventList from '../components/EventList.astro';
+import MiniMap from '../components/MiniMap.astro';
+import SourceCards from '../components/SourceCards.astro';
+import SourceList from '../components/SourceList.astro';
+import TranslationNotice from '../components/TranslationNotice.astro';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { neighbours } from '../lib/graph';
+import { entryHref, getSite, langOf, renderBody, renderField } from '../lib/site';
+
+export async function getStaticPaths() {
+  const site = await getSite();
+  return localeParams().flatMap((locale) => site.events.map((event) => ({ params: { ...locale, id: event.id } })));
+}
+
+const i18n = useI18n(Astro);
+const { t, href, arrow } = i18n;
+const site = await getSite(i18n.code);
+const event = site.eventsById.get(Astro.params.id!)!;
+const { data } = event;
+const era = event.eraEntry;
+const lang = langOf(site, event.entry);
+const confidence = {
+  label: t(`confidence.${event.date.confidence}.label`),
+  description: t(`confidence.${event.date.confidence}.description`),
+};
+
+const body = renderBody(site, event.entry);
+const dating = data.dating ? renderField(site, event.entry, 'dating', data.dating) : undefined;
+
+// Everything cited anywhere on the page, each passage and source once.
+const bible = [...body.bible];
+const cites = [...body.cites];
+for (const ref of dating?.bible ?? []) if (!bible.some((b) => b.osis === ref.osis)) bible.push(ref);
+for (const cite of dating?.cites ?? []) if (!cites.some((c) => c.key === cite.key)) cites.push(cite);
+
+const follows = event.follows.flatMap((id) => site.eventsById.get(id) ?? []);
+const leadsTo = (site.leadsTo.get(event.id) ?? []).flatMap((id) => site.eventsById.get(id) ?? []);
+
+const threads = event.threads.flatMap((id) => {
+  const thread = site.threadsById.get(id);
+  if (!thread) return [];
+  return { thread, ...neighbours(site.byThread.get(id) ?? [], event.id) };
+});
+
+const timeline = neighbours(site.events, event.id);
+const reviewed = data.reviewed ? i18n.day(data.reviewed) : undefined;
+---
+
+<Base title={event.title} description={data.draft ? undefined : data.summary} section="timeline">
+  <article class="entry" style={`--era-colour: var(--${era.data.colour})`} data-pagefind-body>
+    <header class="entry__header page">
+      <nav class="breadcrumb" aria-label={t('nav.breadcrumb')}>
+        <a href={href('/')}>{t('nav.timeline')}</a>
+        <span aria-hidden="true">›</span>
+        <a href={href(`/#era-${era.id}`)} data-pagefind-filter="era" lang={langOf(site, era)}>{era.data.title}</a>
+      </nav>
+      <h1 data-pagefind-meta="title" lang={lang}>{event.title}</h1>
+      <p class="entry__facts">
+        <DateLabel date={event.date} class="entry__date" lang={lang} />
+        <a class="entry__confidence" href="#dating">{confidence.label}</a>
+        <span data-pagefind-meta={`date:${event.dateLabel}`} hidden></span>
+        <span data-pagefind-meta={`kind:${t('kind.event')}`} hidden></span>
+      </p>
+      {data.draft ? <p class="lead">{t('common.notWritten')}</p> : <p class="lead" lang={lang}>{data.summary}</p>}
+    </header>
+    <TranslationNotice entry={event.entry} />
+
+    <div class="entry__layout page">
+      <div class="entry__main">
+        <div class="prose" lang={lang} set:html={body.html} />
+
+        {
+          (dating || event.date.confidence === 'firm') && !data.draft && (
+            <section class="entry__section" id="dating" aria-labelledby="dating-title">
+              <h2 class="section-title" id="dating-title">
+                {t('event.datingTitle')}
+              </h2>
+              <p class="dating-label">
+                <ConfidenceMark confidence={event.date.confidence} />
+                <strong>{confidence.label}.</strong> {confidence.description}
+              </p>
+              {dating && <div class="prose prose--small" lang={lang} set:html={dating.html} />}
+            </section>
+          )
+        }
+
+        {
+          (bible.length > 0 || cites.length > 0) && (
+            <section class="entry__section" id="sources" aria-labelledby="sources-title">
+              <h2 class="section-title" id="sources-title">
+                {t('common.primarySources')}
+              </h2>
+              <SourceList bible={bible} cites={cites} lang={lang} />
+              <p class="entry__reviewed meta">
+                {reviewed ? t('event.reviewed', { date: reviewed }) : t('event.awaiting')}
+              </p>
+            </section>
+          )
+        }
+      </div>
+
+      <aside class="entry__aside" aria-label={t('event.aside')}>
+        {event.places.length > 0 && <MiniMap places={event.places} />}
+        {
+          event.places.length > 0 && (
+            <div>
+              <h2 class="section-title">{t('event.where')}</h2>
+              <EntryChips type="place" ids={event.places} />
+            </div>
+          )
+        }
+        {
+          event.people.length > 0 && (
+            <div>
+              <h2 class="section-title">{t('event.who')}</h2>
+              <EntryChips type="person" ids={event.people} />
+            </div>
+          )
+        }
+        {
+          threads.length > 0 && (
+            <div>
+              <h2 class="section-title">{t('event.threads')}</h2>
+              <EntryChips type="thread" ids={event.threads} />
+            </div>
+          )
+        }
+      </aside>
+    </div>
+
+    <div class="entry__context page" data-pagefind-ignore>
+      {
+        (follows.length > 0 || leadsTo.length > 0) && (
+          <section class="context" aria-labelledby="context-title">
+            <h2 id="context-title">{t('event.context')}</h2>
+            <div class="context__columns">
+              {follows.length > 0 && (
+                <div>
+                  <h3 class="section-title">{t('event.growsOutOf')}</h3>
+                  <EventList events={follows} />
+                </div>
+              )}
+              {leadsTo.length > 0 && (
+                <div>
+                  <h3 class="section-title">{t('event.leadsTo')}</h3>
+                  <EventList events={leadsTo} />
+                </div>
+              )}
+            </div>
+          </section>
+        )
+      }
+
+      {
+        threads.length > 0 && (
+          <section class="context" aria-labelledby="threads-title">
+            <h2 id="threads-title">{t('event.alongThreads')}</h2>
+            <ul class="thread-nav" role="list">
+              {threads.map(({ thread, prev, next }) => (
+                <li>
+                  <a class="thread-nav__name" href={entryHref(site, 'thread', thread.id)} lang={langOf(site, thread)}>
+                    {thread.data.title}
+                  </a>
+                  <div class="thread-nav__steps">
+                    {prev ? (
+                      <a href={entryHref(site, 'event', prev.id)} rel="prev">
+                        <span class="meta">{t('event.before', { date: prev.dateLabel })}</span>
+                        <span lang={langOf(site, prev.entry)}>{prev.title}</span>
+                      </a>
+                    ) : (
+                      <span class="thread-nav__edge meta">{t('event.threadBegins')}</span>
+                    )}
+                    {next ? (
+                      <a href={entryHref(site, 'event', next.id)} rel="next">
+                        <span class="meta">{t('event.after', { date: next.dateLabel })}</span>
+                        <span lang={langOf(site, next.entry)}>{next.title}</span>
+                      </a>
+                    ) : (
+                      <span class="thread-nav__edge meta">{t('event.threadLatest')}</span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      <nav class="pager" aria-label={t('event.pager')}>
+        {
+          timeline.prev ? (
+            <a href={entryHref(site, 'event', timeline.prev.id)} rel="prev">
+              <span class="meta">
+                {arrow.back} {t('event.earlier', { date: timeline.prev.dateLabel })}
+              </span>
+              <span lang={langOf(site, timeline.prev.entry)}>{timeline.prev.title}</span>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+        {
+          timeline.next && (
+            <a class="pager__next" href={entryHref(site, 'event', timeline.next.id)} rel="next">
+              <span class="meta">
+                {t('event.later', { date: timeline.next.dateLabel })} {arrow.forward}
+              </span>
+              <span lang={langOf(site, timeline.next.entry)}>{timeline.next.title}</span>
+            </a>
+          )
+        }
+      </nav>
+    </div>
+  </article>
+
+  <SourceCards slot="after" ids={cites.map((cite) => cite.source.id)} />
+</Base>
+
+<style>
+  .entry__header {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-5);
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+  }
+
+  .entry__header::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: var(--space-6);
+    width: 3rem;
+    height: 3px;
+    background: var(--era-colour);
+  }
+
+  .breadcrumb {
+    padding-top: var(--space-4);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+    color: var(--ink-muted);
+  }
+
+  .breadcrumb a {
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .entry__header h1 {
+    margin-top: var(--space-3);
+    max-width: 22ch;
+  }
+
+  .entry__facts {
+    margin-top: var(--space-4);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .entry__facts :global(.entry__date) {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--era-colour);
+  }
+
+  .entry__confidence {
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+    color: var(--ink-muted);
+    text-decoration-color: var(--rule-strong);
+  }
+
+  .entry__header .lead {
+    margin-top: var(--space-4);
+    max-width: 46rem;
+    color: var(--ink-muted);
+  }
+
+  .entry__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+    padding-top: var(--space-6);
+  }
+
+  .entry__aside {
+    display: grid;
+    gap: var(--space-5);
+    align-content: start;
+  }
+
+  .entry__section {
+    margin-top: var(--space-7);
+    max-width: var(--measure);
+    scroll-margin-top: var(--space-5);
+  }
+
+  .dating-label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.45em;
+    font-family: var(--font-sans);
+    font-size: var(--ui);
+    color: var(--ink-muted);
+    margin-bottom: var(--space-3);
+  }
+
+  .dating-label :global(.confidence-mark) {
+    align-self: center;
+    color: var(--era-colour);
+  }
+
+  .dating-label strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .entry__reviewed {
+    margin-top: var(--space-3);
+  }
+
+  .entry__context {
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--rule);
+    display: grid;
+    gap: var(--space-7);
+  }
+
+  .context h2 {
+    font-size: var(--step-2);
+    margin-bottom: var(--space-4);
+  }
+
+  .context__columns {
+    display: grid;
+    gap: var(--space-5) var(--space-7);
+  }
+
+  .thread-nav {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .thread-nav li {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-large);
+    background: var(--surface);
+  }
+
+  .thread-nav__name {
+    font-family: var(--font-sans);
+    font-size: var(--ui);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .thread-nav__name:hover {
+    text-decoration: underline;
+  }
+
+  .thread-nav__steps,
+  .pager {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .thread-nav__steps a,
+  .pager a {
+    display: grid;
+    gap: 0.1rem;
+    text-decoration: none;
+    line-height: 1.3;
+  }
+
+  .thread-nav__steps a:hover span:last-child,
+  .pager a:hover span:last-child {
+    text-decoration: underline;
+    text-decoration-thickness: 0.06em;
+    text-underline-offset: 0.18em;
+  }
+
+  .thread-nav__steps > :last-child,
+  .pager__next {
+    text-align: end;
+  }
+
+  .thread-nav__edge {
+    align-self: center;
+    color: var(--ink-faint);
+  }
+
+  .pager {
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--rule);
+    font-size: var(--step-1);
+  }
+
+  @media (min-width: 62rem) {
+    .entry__layout {
+      grid-template-columns: minmax(0, 1fr) 19rem;
+      column-gap: var(--space-8);
+    }
+
+    .entry__aside {
+      position: sticky;
+      top: var(--space-5);
+    }
+
+    .context__columns {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 34rem) {
+    .thread-nav__steps,
+    .pager {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .thread-nav__steps > :last-child,
+    .pager__next {
+      text-align: start;
+    }
+  }
+</style>

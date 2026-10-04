@@ -1,0 +1,71 @@
+---
+import '../styles/index.css';
+import EntryHeader from '../components/EntryHeader.astro';
+import EventList from '../components/EventList.astro';
+import SourceCards from '../components/SourceCards.astro';
+import SourceList from '../components/SourceList.astro';
+import { i18nFor, localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import type { WikiDate } from '../lib/dates';
+import { getSite, isPublished, langOf, renderBody } from '../lib/site';
+
+export async function getStaticPaths() {
+  const site = await getSite();
+  const people = [...site.people.values()].filter(isPublished);
+  return localeParams().flatMap((locale) => people.map((person) => ({ params: { ...locale, id: person.id } })));
+}
+
+const i18n = useI18n(Astro);
+const { t, href } = i18n;
+const site = await getSite(i18n.code);
+const person = site.people.get(Astro.params.id!)!;
+const { data } = person;
+const lang = langOf(site, person);
+const body = data.draft ? undefined : renderBody(site, person);
+const events = site.byPerson.get(person.id) ?? [];
+// Dates of an entry that is still in English are written the English way, like its other words.
+const life = i18nFor(person.i18n.lang).lifespan(data.born as WikiDate | undefined, data.died as WikiDate | undefined);
+---
+
+<Base title={data.name} description={data.draft ? undefined : data.summary} section="people">
+  <article data-pagefind-body>
+    <EntryHeader
+      kicker={t('people.title')}
+      kickerHref={href('/people/')}
+      title={data.name}
+      lead={data.summary}
+      kind={t('kind.person')}
+      draft={data.draft}
+      entry={person}
+    >
+      <Fragment slot="facts">
+        {!data.draft && <span lang={lang}>{data.role}</span>}
+        {life && <span lang={lang}>{life}</span>}
+        {data.altNames.length > 0 && <span>{t('common.also', { names: data.altNames.join(', ') })}</span>}
+      </Fragment>
+    </EntryHeader>
+
+    <div class="page entry-body">
+      {body && <div class="prose" lang={lang} set:html={body.html} />}
+
+      {
+        events.length > 0 && (
+          <section class="entry-body__section" aria-labelledby="events-title" data-pagefind-ignore>
+            <h2 id="events-title">{t('people.inTimeline')}</h2>
+            <EventList events={events} summaries />
+          </section>
+        )
+      }
+
+      {
+        body && (body.bible.length > 0 || body.cites.length > 0) && (
+          <section class="entry-body__section" aria-labelledby="sources-title">
+            <h2 id="sources-title">{t('common.primarySources')}</h2>
+            <SourceList bible={body.bible} cites={body.cites} lang={lang} />
+          </section>
+        )
+      }
+    </div>
+  </article>
+  {body && <SourceCards slot="after" ids={body.cites.map((cite) => cite.source.id)} />}
+</Base>

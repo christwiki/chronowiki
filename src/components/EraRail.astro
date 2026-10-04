@@ -1,0 +1,140 @@
+---
+import { useI18n } from '../i18n';
+import { getSite, langOf, SHOW_DRAFTS } from '../lib/site';
+
+const { t, code } = useI18n(Astro);
+const site = await getSite(code);
+const eras = site.eras
+  .map((era) => ({ era, count: site.byEra.get(era.id)?.length ?? 0 }))
+  .filter(({ count }) => count > 0 || SHOW_DRAFTS);
+---
+
+<nav class="era-rail" aria-label={t('eras.rail')} data-era-rail>
+  <ol role="list">
+    {
+      eras.map(({ era, count }) => (
+        <li style={`--weight: ${Math.max(count, 1)}; --era-colour: var(--${era.data.colour})`}>
+          <a href={`#era-${era.id}`} data-era={era.id} title={`${era.data.title}, ${era.data.span}`}>
+            <span class="era-rail__name" lang={langOf(site, era)}>{era.data.short ?? era.data.title}</span>
+            <span class="era-rail__count" data-era-count aria-label={t('common.events', { count })}>
+              {count}
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+
+<style>
+  .era-rail {
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+  }
+
+  .era-rail a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    color: var(--ink-muted);
+    text-decoration: none;
+    line-height: 1.2;
+  }
+
+  .era-rail a:hover {
+    color: var(--ink);
+  }
+
+  .era-rail a[aria-current='true'] {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .era-rail__count {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-faint);
+    font-weight: 400;
+  }
+
+  .era-rail li.is-empty a {
+    opacity: 0.45;
+  }
+
+  /* Wide screens: a vertical rail whose segments are sized by the number of events. */
+  @media (min-width: 62rem) {
+    .era-rail {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      height: 100dvh;
+      padding-block: var(--space-5);
+    }
+
+    .era-rail ol {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .era-rail li {
+      flex: var(--weight) 1 0;
+      min-height: 1.75rem;
+      display: flex;
+      border-inline-start: 3px solid color-mix(in srgb, var(--era-colour) 35%, transparent);
+      transition: border-color 0.2s;
+    }
+
+    .era-rail li:has(a[aria-current='true']),
+    .era-rail li:hover {
+      border-inline-start-color: var(--era-colour);
+    }
+
+    .era-rail a {
+      flex: 1;
+      padding-inline: var(--space-3) var(--space-2);
+    }
+  }
+
+  /* Narrow screens: a strip of era links that scrolls sideways and stays at the top. */
+  @media (max-width: 61.99rem) {
+    .era-rail {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--rule);
+      margin-inline: calc(-1 * var(--gutter));
+    }
+
+    .era-rail ol {
+      display: flex;
+      gap: var(--space-2);
+      overflow-x: auto;
+      padding: var(--space-2) var(--gutter);
+      scrollbar-width: none;
+    }
+
+    .era-rail ol::-webkit-scrollbar {
+      display: none;
+    }
+
+    .era-rail a {
+      white-space: nowrap;
+      padding: 0.35rem 0.7rem;
+      border: 1px solid var(--rule-strong);
+      border-radius: 999px;
+      background: var(--surface);
+    }
+
+    .era-rail a[aria-current='true'] {
+      border-color: var(--era-colour);
+      box-shadow: inset 0 0 0 1px var(--era-colour);
+    }
+
+    .era-rail__count {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,27 @@
+{
+  "name": "chronowiki-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A small wiki built with chronowiki: the starting point for your own.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "chronowiki validate && astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "validate": "chronowiki validate",
+    "check:links": "chronowiki check-links",
+    "i18n": "chronowiki i18n"
+  },
+  "dependencies": {
+    "astro": "^7.3.5",
+    "chronowiki": "file:.."
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^6.0.3"
+  },
+  "allowScripts": {
+    "esbuild": true
+  }
+}

@@ -1,0 +1,121 @@
+---
+import '../styles/index.css';
+import EntryHeader from '../components/EntryHeader.astro';
+import EventList from '../components/EventList.astro';
+import MiniMap from '../components/MiniMap.astro';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { entryHref, getSite, langOf, renderBody } from '../lib/site';
+
+export async function getStaticPaths() {
+  const site = await getSite();
+  return localeParams().flatMap((locale) => site.eras.map((era) => ({ params: { ...locale, id: era.id } })));
+}
+
+const { t, href, arrow, code } = useI18n(Astro);
+const site = await getSite(code);
+const era = site.erasById.get(Astro.params.id!)!;
+const lang = langOf(site, era);
+const body = renderBody(site, era);
+const events = site.byEra.get(era.id) ?? [];
+const index = site.eras.findIndex((candidate) => candidate.id === era.id);
+const previous = site.eras[index - 1];
+const next = site.eras[index + 1];
+const places = [...new Set(events.flatMap((event) => event.places))];
+---
+
+<Base title={era.data.title} description={era.data.summary} section="timeline">
+  <article data-pagefind-body style={`--era-colour: var(--${era.data.colour})`}>
+    <EntryHeader
+      kicker={t('nav.timeline')}
+      kickerHref={href('/')}
+      title={era.data.title}
+      lead={era.data.summary}
+      kind={t('kind.era')}
+      entry={era}
+    >
+      <Fragment slot="facts">
+        <span class="era-span" lang={lang}>{era.data.span}</span>
+        <span>{t('common.events', { count: events.length })}</span>
+        <a href={href(`/#era-${era.id}`)}>{t('common.showOnTimeline')}</a>
+      </Fragment>
+    </EntryHeader>
+
+    <div class="page entry-body entry-body--with-aside">
+      <div>
+        <div class="prose" lang={lang} set:html={body.html} />
+
+        <section class="entry-body__section" aria-labelledby="events-title" data-pagefind-ignore>
+          <h2 id="events-title">{t('eras.eventsOf')}</h2>
+          <EventList events={events} summaries />
+        </section>
+
+        <nav class="era-pager" aria-label={t('eras.others')}>
+          {
+            previous ? (
+              <a href={entryHref(site, 'era', previous.id)}>
+                <span class="meta">
+                  {arrow.back} {t('common.earlier')}
+                </span>
+                <span lang={langOf(site, previous)}>{previous.data.title}</span>
+              </a>
+            ) : (
+              <span />
+            )
+          }
+          {
+            next && (
+              <a class="era-pager__next" href={entryHref(site, 'era', next.id)}>
+                <span class="meta">
+                  {t('common.later')} {arrow.forward}
+                </span>
+                <span lang={langOf(site, next)}>{next.data.title}</span>
+              </a>
+            )
+          }
+        </nav>
+      </div>
+
+      {
+        places.length > 0 && (
+          <aside class="entry-body__aside" aria-label={t('eras.where')}>
+            <MiniMap places={places} />
+            <p class="meta">{t('eras.places')}</p>
+          </aside>
+        )
+      }
+    </div>
+  </article>
+</Base>
+
+<style>
+  .era-span {
+    color: var(--era-colour);
+    font-weight: 600;
+  }
+
+  .era-pager {
+    margin-top: var(--space-7);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    font-size: var(--step-1);
+  }
+
+  .era-pager a {
+    display: grid;
+    gap: 0.1rem;
+    text-decoration: none;
+    line-height: 1.3;
+  }
+
+  .era-pager a:hover span:last-child {
+    text-decoration: underline;
+  }
+
+  .era-pager__next {
+    text-align: end;
+  }
+</style>

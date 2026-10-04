@@ -1,0 +1,134 @@
+---
+import { getLocale, useI18n } from '../i18n';
+import type { BibleRef } from '../lib/bible';
+import type { UsedCitation } from '../lib/prose';
+import { getSite, isPublished, langOf, writtenLabel } from '../lib/site';
+
+interface Props {
+  bible: BibleRef[];
+  cites: UsedCitation[];
+  /** The language of the text these citations come from, where that is not the page's. */
+  lang?: string;
+}
+
+const { bible, cites, lang } = Astro.props;
+const i18n = useI18n(Astro);
+const { t } = i18n;
+const site = await getSite(i18n.code);
+/** The Bible reader the passages link to belongs to the language of the text they are cited in. */
+const reader = getLocale(lang ?? i18n.code).bible;
+
+/** Citations grouped by source, so each source is shown once with all its passages. */
+const groups = new Map<string, UsedCitation[]>();
+for (const cite of cites) groups.set(cite.source.id, [...(groups.get(cite.source.id) ?? []), cite]);
+
+function hostOf(url: string): string {
+  return new URL(url).hostname.replace(/^www\./, '');
+}
+---
+
+<div class="source-list">
+  {
+    bible.length > 0 && (
+      <div class="source">
+        <h3 class="source__title">{t('sourceList.scripture')}</h3>
+        <p class="source__meta">{t('sourceList.reader', { version: reader.version, reader: reader.reader })}</p>
+        <ul class="source__passages" role="list" lang={lang}>
+          {bible.flatMap((ref) =>
+            ref.links.map((link) => (
+              <li>
+                <a class="cite cite--bible" href={link.url} target="_blank" rel="noopener">
+                  {link.label}
+                </a>
+              </li>
+            )),
+          )}
+        </ul>
+      </div>
+    )
+  }
+  {
+    [...groups.values()].map((group) => {
+      const source = site.sources.get(group[0].source.id)!;
+      const { data } = source;
+      const meta = [data.author, writtenLabel(site, source), data.language && i18n.languageName(data.language), data.holding].filter(Boolean);
+      return (
+        <div class="source">
+          <h3 class="source__title" lang={langOf(site, source)}>
+            {isPublished(source) ? <a href={group[0].source.href}>{data.title}</a> : data.title}
+          </h3>
+          {meta.length > 0 && <p class="source__meta">{meta.join(' · ')}</p>}
+          <ul class="source__passages" role="list">
+            {group.map((cite) => (
+              <li>
+                <a class="cite cite--source" href={cite.url} target="_blank" rel="noopener" data-source={cite.source.id} lang={lang}>
+                  {cite.label}
+                </a>
+                <span class="source__host">{hostOf(cite.url)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    })
+  }
+</div>
+
+<style>
+  .source-list {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .source {
+    padding: var(--space-4);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-large);
+    background: var(--surface);
+  }
+
+  .source__title {
+    font-size: 1.125rem;
+    font-weight: 550;
+  }
+
+  .source__title a {
+    text-decoration-color: var(--rule-strong);
+  }
+
+  .source__meta {
+    margin-top: 0.15rem;
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+    color: var(--ink-muted);
+  }
+
+  .source__passages {
+    margin-top: var(--space-3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .source__passages li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  .source__passages .cite {
+    font-size: var(--ui);
+    white-space: normal;
+  }
+
+  .source__passages .cite::after {
+    content: ' ↗';
+    font-size: 0.85em;
+  }
+
+  .source__host {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+  }
+</style>

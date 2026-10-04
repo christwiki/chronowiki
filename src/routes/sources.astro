@@ -1,0 +1,79 @@
+---
+import '../styles/index.css';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { SOURCE_KINDS } from '../content/schemas';
+import { entryHref, getSite, isPublished, langOf, writtenLabel } from '../lib/site';
+
+export function getStaticPaths() {
+  return localeParams().map((params) => ({ params }));
+}
+
+const i18n = useI18n(Astro);
+const { t } = i18n;
+const site = await getSite(i18n.code);
+const sources = [...site.sources.values()].filter(isPublished);
+
+/** Kinds in reading order. Their headings and notes are in the messages. */
+const ORDER: (typeof SOURCE_KINDS)[number][] = [
+  'scripture',
+  'inscription',
+  'artifact',
+  'manuscript',
+  'chronicle',
+  'history',
+  'letter',
+  'treatise',
+  'council',
+  'creed',
+  'law',
+  'liturgy',
+];
+
+const startOf = (source: (typeof sources)[number]) => source.data.written?.start ?? Number.POSITIVE_INFINITY;
+const groups = ORDER.map((kind) => ({
+  kind,
+  label: t(`sourceGroup.${kind}.label`),
+  note: t(`sourceGroup.${kind}.note`),
+  sources: sources
+    .filter((source) => source.data.kind === kind)
+    .sort((a, b) => startOf(a) - startOf(b) || i18n.compare(a.data.title, b.data.title)),
+})).filter((group) => group.sources.length > 0);
+
+const hostOf = (url: string) => new URL(url).hostname.replace(/^www\./, '');
+---
+
+<Base title={t('sources.title')} description={t('sources.description')} section="sources">
+  <div class="page index">
+    <header class="index__header">
+      <h1>{t('sources.title')}</h1>
+      <p class="lead">{t('sources.lead', { count: sources.length })}</p>
+      <nav class="index__letters" aria-label={t('sources.jump')}>
+        {groups.map((group) => <a href={`#kind-${group.kind}`}>{group.label}</a>)}
+      </nav>
+    </header>
+
+    {
+      groups.map((group) => (
+        <section class="index__group" aria-labelledby={`kind-${group.kind}`}>
+          <h2 id={`kind-${group.kind}`}>
+            {group.label}
+            <small>{group.note}</small>
+          </h2>
+          <ul class="index__list" role="list">
+            {group.sources.map((source) => (
+              <li>
+                <a href={entryHref(site, 'source', source.id)} lang={langOf(site, source)}>{source.data.title}</a>
+                <span class="meta">
+                  <span lang={langOf(site, source)}>{[source.data.author, writtenLabel(site, source)].filter(Boolean).join(' · ')}</span>
+                  {(source.data.author || source.data.written) && ' · '}
+                  {hostOf(source.data.url)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</Base>

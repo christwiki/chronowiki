@@ -1,0 +1,40 @@
+---
+import type { Confidence } from '../lib/dates';
+
+interface Props {
+  confidence: Confidence;
+  class?: string;
+}
+
+const { confidence, class: className } = Astro.props;
+---
+
+<svg class:list={['confidence-mark', className]} viewBox="0 0 13 13" aria-hidden="true" data-confidence={confidence}>
+  {confidence === 'firm' && <circle cx="6.5" cy="6.5" r="5.5" fill="currentColor" />}
+  {
+    confidence === 'estimated' && (
+      <>
+        <circle cx="6.5" cy="6.5" r="4.75" fill="var(--mark-bg, var(--bg))" stroke="currentColor" stroke-width="1.5" />
+        <path d="M6.5 1.75a4.75 4.75 0 0 0 0 9.5Z" fill="currentColor" />
+      </>
+    )
+  }
+  {
+    confidence === 'traditional' && (
+      <circle cx="6.5" cy="6.5" r="4.75" fill="var(--mark-bg, var(--bg))" stroke="currentColor" stroke-width="1.5" />
+    )
+  }
+  {
+    confidence === 'undated' && (
+      <circle
+        cx="6.5"
+        cy="6.5"
+        r="4.75"
+        fill="var(--mark-bg, var(--bg))"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-dasharray="2.2 2.1"
+      />
+    )
+  }
+</svg>

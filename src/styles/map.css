@@ -1,0 +1,223 @@
+/* The map drawn by src/scripts/map.ts */
+
+.map {
+  position: relative;
+  overflow: hidden;
+  background: var(--map-sea);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-large);
+  font-family: var(--font-sans);
+  isolation: isolate;
+}
+
+.map__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* One finger scrolls the page past the map; two fingers pinch and pan it. */
+  touch-action: pan-y;
+  cursor: grab;
+  outline-offset: -3px;
+}
+
+.map__svg--free-wheel {
+  touch-action: none;
+}
+
+.map__svg:active {
+  cursor: grabbing;
+}
+
+.map--static .map__svg {
+  cursor: default;
+  touch-action: auto;
+  pointer-events: none;
+}
+
+.map__land {
+  fill: var(--map-land);
+  stroke: var(--map-coast);
+  stroke-width: 0.75;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.map__lakes {
+  fill: var(--map-sea);
+  stroke: var(--map-coast);
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+
+.map__rivers {
+  fill: none;
+  stroke: var(--map-water);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Pins */
+.map__pin {
+  --pin-colour: var(--ink-faint);
+  cursor: pointer;
+  outline: none;
+}
+
+.map__pin-hit {
+  fill: transparent;
+}
+
+.map__pin-dot {
+  fill: var(--ink-faint);
+  fill-opacity: 0.55;
+  stroke: var(--map-land);
+  stroke-width: 0.75;
+  transition: r 0.25s ease, fill-opacity 0.25s ease;
+}
+
+.map__pin.is-active .map__pin-dot {
+  fill: var(--pin-colour);
+  fill-opacity: 1;
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+
+/* A place whose position is traditional, approximate or disputed is drawn hollow. */
+.map__pin.is-uncertain.is-active .map__pin-dot {
+  fill: var(--surface);
+  stroke: var(--pin-colour);
+  stroke-width: 2;
+  stroke-dasharray: 2.5 2;
+}
+
+.map__pin.is-highlighted .map__pin-dot {
+  fill: var(--accent);
+  fill-opacity: 1;
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.map__pin:focus-visible .map__pin-hit,
+.map__pin[aria-expanded='true'] .map__pin-hit {
+  fill: color-mix(in srgb, var(--focus) 18%, transparent);
+  stroke: var(--focus);
+  stroke-width: 1.5;
+}
+
+.map--static .map__pin {
+  cursor: default;
+}
+
+.map__label {
+  font-size: 11.5px;
+  font-weight: 550;
+  fill: var(--ink);
+  paint-order: stroke;
+  stroke: var(--map-land);
+  stroke-width: 3.5;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/* Controls */
+.map__controls {
+  position: absolute;
+  inset-inline-end: var(--space-3);
+  top: var(--space-3);
+  display: grid;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.map__controls button {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--ink-muted);
+}
+
+.map__controls button + button {
+  border-top: 1px solid var(--rule);
+}
+
+.map__controls button:hover {
+  background: var(--surface-sunk);
+  color: var(--ink);
+}
+
+.map__controls button:focus-visible {
+  outline-offset: -2px;
+}
+
+/* The card listing the events at a place */
+.map__card {
+  position: absolute;
+  z-index: 2;
+  width: min(17.5rem, calc(100% - 1rem));
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-large);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-size: var(--ui-small);
+  line-height: 1.35;
+}
+
+.map__card-title {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  font-weight: 550;
+}
+
+.map__card-meta {
+  color: var(--ink-muted);
+}
+
+.map__card ul {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.map__card li a {
+  display: block;
+  padding-inline-start: var(--space-3);
+  border-inline-start: 2px solid var(--era-colour);
+  text-decoration: none;
+}
+
+.map__card li a:hover {
+  text-decoration: underline;
+}
+
+.map__card-date {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--era-colour);
+}
+
+.map__caption {
+  position: absolute;
+  inset-inline-start: var(--space-3);
+  bottom: var(--space-3);
+  max-width: calc(100% - 1.5rem);
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  pointer-events: none;
+}

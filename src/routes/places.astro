@@ -1,0 +1,94 @@
+---
+import '../styles/index.css';
+import '../styles/map.css';
+import wiki from 'virtual:chronowiki/config';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { entryHref, getSite, isPublished, langOf } from '../lib/site';
+
+export function getStaticPaths() {
+  return localeParams().map((params) => ({ params }));
+}
+
+const i18n = useI18n(Astro);
+const { t, href } = i18n;
+const site = await getSite(i18n.code);
+const places = [...site.places.values()].filter(isPublished).sort((a, b) => i18n.compare(a.data.name, b.data.name));
+
+const groups = wiki.regions.map((region) => ({
+  region,
+  places: places.filter((place) => !place.data.draft && place.data.region === region),
+})).filter((group) => group.places.length > 0);
+const drafts = places.filter((place) => place.data.draft);
+---
+
+<Base title={t('places.title')} description={t('places.description')} section="places">
+  <div class="page index">
+    <header class="index__header">
+      <h1>{t('places.title')}</h1>
+      <p class="lead">{t('places.lead', { count: places.length })}</p>
+    </header>
+
+    <div class="places-map" data-places-map data-map-data={href('/data/map.json')}></div>
+
+    {
+      groups.map(({ region, places }) => (
+        <section class="index__group" aria-labelledby={`region-${region}`}>
+          <h2 id={`region-${region}`}>
+            {i18n.region(region)}
+            <small>{t('places.count', { count: places.length })}</small>
+          </h2>
+          <ul class="index__list" role="list">
+            {places.map((place) => (
+              <li>
+                <a href={entryHref(site, 'place', place.id)} lang={langOf(site, place)}>{place.data.name}</a>
+                <span class="meta">
+                  <span lang={langOf(site, place)}>{place.data.modern}</span>
+                  {place.data.location !== 'known' &&
+                    ` · ${t('places.locationTag', { kind: t(`places.location.${place.data.location}`) })}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+    {
+      drafts.length > 0 && (
+        <section class="index__group" aria-labelledby="region-drafts">
+          <h2 id="region-drafts">
+            {t('places.notWritten')}
+            <small>{t('places.count', { count: drafts.length })}</small>
+          </h2>
+          <ul class="index__list" role="list">
+            {drafts.map((place) => (
+              <li>
+                <a href={entryHref(site, 'place', place.id)}>{place.data.name}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </div>
+
+  <script>
+    import { createMap } from '../scripts/map';
+
+    const root = document.querySelector<HTMLElement>('[data-places-map]');
+    if (root) {
+      createMap(root, { dataUrl: root.dataset.mapData! })
+        .then((map) => fetch(root.dataset.mapData!).then((r) => r.json()).then((data) => map.setVisible(data.events.map((e: { id: string }) => e.id))))
+        .catch(() => {
+          root.hidden = true;
+        });
+    }
+  </script>
+</Base>
+
+<style>
+  .places-map {
+    margin-top: var(--space-5);
+    height: min(60vh, 32rem);
+  }
+</style>

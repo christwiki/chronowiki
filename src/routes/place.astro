@@ -1,0 +1,89 @@
+---
+import '../styles/index.css';
+import EntryHeader from '../components/EntryHeader.astro';
+import EventList from '../components/EventList.astro';
+import MiniMap from '../components/MiniMap.astro';
+import SourceCards from '../components/SourceCards.astro';
+import SourceList from '../components/SourceList.astro';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { getSite, isPublished, langOf, renderBody } from '../lib/site';
+
+export async function getStaticPaths() {
+  const site = await getSite();
+  const places = [...site.places.values()].filter(isPublished);
+  return localeParams().flatMap((locale) => places.map((place) => ({ params: { ...locale, id: place.id } })));
+}
+
+const i18n = useI18n(Astro);
+const { t, href } = i18n;
+const site = await getSite(i18n.code);
+const place = site.places.get(Astro.params.id!)!;
+const { data } = place;
+const lang = langOf(site, place);
+const body = data.draft ? undefined : renderBody(site, place);
+const events = site.byPlace.get(place.id) ?? [];
+
+const degrees = new Intl.NumberFormat(i18n.code, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const latitude = t(data.lat >= 0 ? 'places.north' : 'places.south', { degrees: degrees.format(Math.abs(data.lat)) });
+const longitude = t(data.lon >= 0 ? 'places.east' : 'places.west', { degrees: degrees.format(Math.abs(data.lon)) });
+---
+
+<Base title={data.name} description={data.draft ? undefined : data.summary} section="places">
+  <article data-pagefind-body>
+    <EntryHeader
+      kicker={t('places.title')}
+      kickerHref={href('/places/')}
+      title={data.name}
+      lead={data.summary}
+      kind={t('kind.place')}
+      draft={data.draft}
+      entry={place}
+    >
+      <Fragment slot="facts">
+        {!data.draft && <span lang={lang}>{data.modern}</span>}
+        {!data.draft && <span>{i18n.region(data.region)}</span>}
+        {data.altNames.length > 0 && <span>{t('common.also', { names: data.altNames.join(', ') })}</span>}
+      </Fragment>
+    </EntryHeader>
+
+    <div class="page entry-body entry-body--with-aside">
+      <div>
+        {body && <div class="prose" lang={lang} set:html={body.html} />}
+
+        {
+          events.length > 0 && (
+            <section class="entry-body__section" aria-labelledby="events-title" data-pagefind-ignore>
+              <h2 id="events-title">{t('places.happened')}</h2>
+              <EventList events={events} summaries />
+            </section>
+          )
+        }
+
+        {
+          body && (body.bible.length > 0 || body.cites.length > 0) && (
+            <section class="entry-body__section" aria-labelledby="sources-title">
+              <h2 id="sources-title">{t('common.primarySources')}</h2>
+              <SourceList bible={body.bible} cites={body.cites} lang={lang} />
+            </section>
+          )
+        }
+      </div>
+
+      {
+        !data.draft && (
+          <aside class="entry-body__aside" aria-label={t('places.aside')}>
+            <MiniMap places={[place.id]} />
+            <dl class="fact-list">
+              <dt>{t('places.position')}</dt>
+              <dd>{t('places.coordinates', { lat: latitude, lon: longitude })}</dd>
+              <dt>{t('places.certainty')}</dt>
+              <dd>{t(`places.locationNote.${data.location}`)}</dd>
+            </dl>
+          </aside>
+        )
+      }
+    </div>
+  </article>
+  {body && <SourceCards slot="after" ids={body.cites.map((cite) => cite.source.id)} />}
+</Base>

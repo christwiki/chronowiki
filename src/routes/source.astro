@@ -1,0 +1,121 @@
+---
+import '../styles/index.css';
+import EntryHeader from '../components/EntryHeader.astro';
+import EventList from '../components/EventList.astro';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { getSite, isPublished, langOf, renderBody, writtenLabel } from '../lib/site';
+
+export async function getStaticPaths() {
+  const site = await getSite();
+  const sources = [...site.sources.values()].filter(isPublished);
+  return localeParams().flatMap((locale) => sources.map((source) => ({ params: { ...locale, id: source.id } })));
+}
+
+const i18n = useI18n(Astro);
+const { t, href } = i18n;
+const site = await getSite(i18n.code);
+const source = site.sources.get(Astro.params.id!)!;
+const { data } = source;
+const lang = langOf(site, source);
+const body = renderBody(site, source);
+const events = site.bySource.get(source.id) ?? [];
+const written = writtenLabel(site, source);
+const hostOf = (url: string) => new URL(url).hostname.replace(/^www\./, '');
+const isObject = ['inscription', 'artifact', 'manuscript'].includes(data.kind);
+---
+
+<Base title={data.title} description={data.summary} section="sources">
+  <article data-pagefind-body>
+    <EntryHeader
+      kicker={t('sources.title')}
+      kickerHref={href('/sources/')}
+      title={data.title}
+      lead={data.summary}
+      kind={t('kind.source')}
+      entry={source}
+    >
+      <Fragment slot="facts">
+        {data.author && <span lang={lang}>{data.author}</span>}
+        {written && <span lang={lang}>{written}</span>}
+      </Fragment>
+      <p class="source-actions">
+        <a class="button" href={data.url} target="_blank" rel="noopener">
+          {t(isObject ? 'sources.seeObject' : 'sources.readText', { host: hostOf(data.url) })} ↗
+        </a>
+        {
+          data.links.map((link) => (
+            <a class="button button--quiet" href={link.url} target="_blank" rel="noopener" lang={lang}>
+              {link.label} ↗
+            </a>
+          ))
+        }
+      </p>
+    </EntryHeader>
+
+    <div class="page entry-body entry-body--with-aside">
+      <div>
+        <div class="prose" lang={lang} set:html={body.html} />
+
+        {
+          events.length > 0 && (
+            <section class="entry-body__section" aria-labelledby="events-title" data-pagefind-ignore>
+              <h2 id="events-title">{t('sources.citedIn')}</h2>
+              <EventList events={events} />
+            </section>
+          )
+        }
+      </div>
+
+      <aside class="entry-body__aside" aria-label={t('sources.aside')}>
+        <dl class="fact-list">
+          <dt>{t('sources.kind')}</dt>
+          <dd class="capitalise">{t(`sourceKind.${data.kind}`)}</dd>
+          {data.author && (
+            <>
+              <dt>{t('sources.author')}</dt>
+              <dd lang={lang}>{data.author}</dd>
+            </>
+          )}
+          {written && (
+            <>
+              <dt>{t('sources.written')}</dt>
+              <dd lang={lang}>{written}</dd>
+            </>
+          )}
+          {data.language && (
+            <>
+              <dt>{t('sources.language')}</dt>
+              <dd>{i18n.languageName(data.language)}</dd>
+            </>
+          )}
+          {data.holding && (
+            <>
+              <dt>{t('sources.heldBy')}</dt>
+              <dd lang={lang}>{data.holding}</dd>
+            </>
+          )}
+          {data.edition && (
+            <>
+              <dt>{t('sources.edition')}</dt>
+              <dd lang={lang}>{data.edition}</dd>
+            </>
+          )}
+        </dl>
+      </aside>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .source-actions {
+    margin-top: var(--space-5);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .capitalise::first-letter {
+    text-transform: uppercase;
+  }
+</style>

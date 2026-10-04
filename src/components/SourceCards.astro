@@ -1,0 +1,94 @@
+---
+/**
+ * One hidden card per source cited on the page. `src/scripts/popover.ts` shows
+ * the matching card when a reader hovers, focuses or taps a citation.
+ */
+import { useI18n } from '../i18n';
+import { entryHref, getSite, isPublished, langOf, writtenLabel } from '../lib/site';
+
+interface Props {
+  ids: string[];
+}
+
+const { t, code } = useI18n(Astro);
+const site = await getSite(code);
+const sources = [...new Set(Astro.props.ids)].flatMap((id) => site.sources.get(id) ?? []);
+---
+
+{
+  sources.map((source) => (
+    <template data-source-card={source.id}>
+      <p class="source-card__kind">{t(`sourceKind.${source.data.kind}`)}</p>
+      <div lang={langOf(site, source)}>
+        <p class="source-card__title">{source.data.title}</p>
+        <p class="source-card__meta">{[source.data.author, writtenLabel(site, source)].filter(Boolean).join(' · ')}</p>
+        <p class="source-card__summary">{source.data.summary}</p>
+      </div>
+      <p class="source-card__links">
+        <a data-passage-link target="_blank" rel="noopener">
+          {t('sourceCard.read')} ↗
+        </a>
+        {isPublished(source) && <a href={entryHref(site, 'source', source.id)}>{t('sourceCard.about')}</a>}
+      </p>
+    </template>
+  ))
+}
+{sources.length > 0 && <div class="source-card" popover="manual" id="source-card" role="tooltip" />}
+
+<script>
+  import '../scripts/popover';
+</script>
+
+<style is:global>
+  .source-card {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    width: min(22rem, calc(100vw - 2rem));
+    padding: var(--space-4);
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius-large);
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+    line-height: 1.45;
+  }
+
+  .source-card__kind {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .source-card__title {
+    margin-top: 0.15rem;
+    font-family: var(--font-serif);
+    font-size: 1.125rem;
+    font-weight: 550;
+    line-height: 1.25;
+  }
+
+  .source-card__meta {
+    color: var(--ink-muted);
+  }
+
+  .source-card__summary {
+    margin-top: var(--space-2);
+  }
+
+  .source-card__links {
+    margin-top: var(--space-3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .source-card__links a {
+    color: var(--accent);
+    font-weight: 500;
+  }
+</style>
