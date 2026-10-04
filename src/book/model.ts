@@ -25,7 +25,6 @@ import {
   type EventView,
   type PersonEntry,
   type PlaceEntry,
-  type SiteData,
   type SourceEntry,
 } from '../lib/site';
 import { bookRef, type Book, type BookDoc } from './types';
