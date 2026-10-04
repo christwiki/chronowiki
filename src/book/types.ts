@@ -50,7 +50,14 @@ export interface BookMeta {
   };
 }
 
+/** A map, as an SVG drawing. A document shows it with `<img src="book:map/<id>"/>`. Events at the same places share one map. */
+export interface BookMap {
+  id: string;
+  svg: string;
+}
+
 export interface Book {
   meta: BookMeta;
   docs: BookDoc[];
+  maps: BookMap[];
 }

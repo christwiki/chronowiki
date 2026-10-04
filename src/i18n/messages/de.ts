@@ -401,6 +401,7 @@ export const de: Messages = {
     updatedTitle: 'Immer die aktuelle Ausgabe',
     updated: 'Das Buch entsteht zusammen mit der Website. Wird hier ein Eintrag berichtigt, enthält die nächste Ausgabe des Buches die Berichtigung. Der Tag, an dem es gemacht wurde, steht auf seiner Titelseite.',
     contents: 'Inhalt',
+    beyondMap: 'Außerhalb dieser Karte: {places}',
     howTitle: 'Wie dieses Buch zu lesen ist',
     howOrder: 'Zuerst kommt der Zeitstrahl, Epoche für Epoche und Ereignis für Ereignis. Darauf folgen die Leitfäden, die sich durch die Epochen ziehen, dann die Personen, die Orte und die Quellen in alphabetischer Folge und zuletzt die Seite, die sagt, wie dieses Buch entsteht.',
     howLinks: 'Jeder unterstrichene Name ist ein Verweis: Tippen Sie darauf, um zu dieser Person, diesem Ort, dieser Quelle oder diesem Ereignis zu gelangen. Jeder dieser Einträge nennt die Ereignisse, zu denen er gehört; es gibt also immer einen Weg zurück.',

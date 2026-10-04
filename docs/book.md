@@ -4,6 +4,8 @@ A wiki is also made as a book: an EPUB for any e-reader and a PDF for large e-pa
 
 ## What is in it
 
+Maps are part of it: every event and every place has a map of where it happened, and every era and thread an overview of all its places. They are drawn when the book is made, from the same shapes as the site's map, in greys that read on a screen with no colour. An overview is framed on where most of the era happened; a place far outside that frame is named beside the map instead of shrinking it.
+
 1. The cover, and a page on how to read the book.
 2. **Timeline.** A page for each era, then each of its events on a page of its own: the summary, the narrative, how the date is known, the sources cited, where and who, what the event grows out of and leads to, and the events before and after it.
 3. **Threads.** Each thread with its events in order.
@@ -31,10 +33,11 @@ In the PDF, a link is marked by a dotted line rather than by colour; a list of l
 | `src/book/model.ts` | Builds the book from the site's data: a run of documents in reading order, each a piece of XHTML in which a link to another entry is written `book:<kind>/<id>`. |
 | `src/book/epub.ts` | Writes the documents as an EPUB 3 file, with the older table of contents beside the new one for old readers. |
 | `src/book/typst.ts` | Writes the documents as Typst source. Every word reaches the typesetter as a string, never as markup. |
+| `src/book/maps.ts` | Draws a map of some places as an SVG: framed as the site frames it, names set where they fit. Events at the same places share one map. |
 | `src/book/cover.ts` | The cover's drawing: the first page of the PDF and the picture an e-reader shows in its library. |
 | `src/book/xml.ts` | A strict parser for the documents. Parsing one is also the check that it is well formed. |
 | `src/routes/book*.ts`, `book.astro` | The page that offers the book, and the two files. |
-| `book-build.mjs` | After the site is built: typesets the Typst source into the PDF, removes the source, draws the cover and puts it into the EPUB. |
+| `book-build.mjs` | After the site is built: typesets the Typst source into the PDF, removes the source, draws the cover and puts it into the EPUB, and turns the EPUB's maps into PNG pictures, which every e-reader can show. |
 
 The entries' text is rendered by the same code as on the site (`src/lib/prose.ts`), told that it is writing for a book.
 

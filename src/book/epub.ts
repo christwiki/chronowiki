@@ -4,7 +4,7 @@
  * no typeface and sets no size: an e-reader's own settings decide those.
  */
 import { strToU8, zipSync, type Zippable } from 'fflate';
-import { BOOK_SCHEME, type Book, type BookDoc } from './types';
+import { BOOK_SCHEME, bookRef, type Book, type BookDoc } from './types';
 import { esc, parseXml } from './xml';
 
 export const EPUB_CSS = `
@@ -28,6 +28,8 @@ ul.links, ul.sources, ul.plain { list-style: none; margin: 0 0 1em; padding: 0; 
 ul.links li, ul.sources li, ul.plain li { margin: 0 0 0.6em; }
 .when { font-family: sans-serif; font-size: 0.8em; white-space: nowrap; }
 .pager { font-family: sans-serif; font-size: 0.85em; border-top: 1px solid; padding-top: 0.7em; margin-top: 2em; }
+.map { margin: 1em 0; text-align: center; page-break-inside: avoid; }
+.map img { width: 100%; height: auto; }
 .titlepage { text-align: center; margin-top: 18%; }
 .titlepage h1 { font-size: 2.2em; margin: 0 0 0.3em; }
 .titlepage .edition { font-family: sans-serif; font-size: 0.85em; margin-top: 3em; }
@@ -47,15 +49,16 @@ export function linkTable(book: Book): Map<string, string> {
       table.set(target.ref, target.anchor ? `${fileOf(doc)}#${target.anchor}` : fileOf(doc));
     }
   }
+  for (const map of book.maps) table.set(bookRef('map', map.id), `maps/${map.id}.svg`);
   return table;
 }
 
-/** A document's XHTML with its links pointing at files. A link to something the book does not hold is an error. */
+/** A document's XHTML with its links and its maps pointing at files. A link to something the book does not hold is an error. */
 export function resolveLinks(html: string, table: Map<string, string>, where: string): string {
-  return html.replace(new RegExp(`href="${BOOK_SCHEME}([^"]+)"`, 'g'), (_, ref: string) => {
+  return html.replace(new RegExp(`(href|src)="${BOOK_SCHEME}([^"]+)"`, 'g'), (_, attribute: string, ref: string) => {
     const target = table.get(`${BOOK_SCHEME}${ref}`);
-    if (!target) throw new Error(`${where} links to ${ref}, which is not in the book`);
-    return `href="${target}"`;
+    if (!target) throw new Error(`${where} ${attribute === 'src' ? 'shows' : 'links to'} ${ref}, which is not in the book`);
+    return `${attribute}="${target}"`;
   });
 }
 
@@ -149,6 +152,7 @@ export function epubFiles(book: Book, options: EpubOptions = {}): Map<string, st
 `,
   );
   files.set('OEBPS/book.css', EPUB_CSS);
+  for (const map of book.maps) files.set(`OEBPS/maps/${map.id}.svg`, `<?xml version="1.0" encoding="utf-8"?>\n${map.svg}\n`);
 
   const coverFile = options.cover ? `cover.${options.cover.type === 'image/png' ? 'png' : 'jpg'}` : undefined;
   if (options.cover && coverFile) files.set(`OEBPS/${coverFile}`, options.cover.data);
@@ -159,6 +163,7 @@ export function epubFiles(book: Book, options: EpubOptions = {}): Map<string, st
     '<item id="css" href="book.css" media-type="text/css"/>',
     ...(options.cover && coverFile ? [`<item id="cover" href="${coverFile}" media-type="${options.cover.type}" properties="cover-image"/>`] : []),
     ...docs.map((doc, index) => `<item id="d${index}" href="${fileOf(doc)}" media-type="application/xhtml+xml"/>`),
+    ...book.maps.map((map) => `<item id="${map.id}" href="maps/${map.id}.svg" media-type="image/svg+xml"/>`),
   ];
   // The time without its fraction, as the EPUB standard writes it.
   const modified = meta.modified.toISOString().replace(/\.\d+Z$/, 'Z');

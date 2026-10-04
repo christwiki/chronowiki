@@ -29,6 +29,8 @@ interface Context {
   known: Set<string>;
   /** The label for the element with a given `id` in this document. */
   anchors: Map<string, string>;
+  /** The maps the book holds. */
+  maps: Set<string>;
 }
 
 /** A run of text and inline elements, as a Typst expression. */
@@ -144,6 +146,12 @@ function blocks(nodes: XNode[], ctx: Context): string[] {
         }
         break;
       case 'p': {
+        const picture = classes(node).includes('map') ? node.children.filter(isElement).find((child) => child.tag === 'img') : undefined;
+        if (picture) {
+          const id = (picture.attrs.src ?? '').slice(`${BOOK_SCHEME}map/`.length);
+          if (ctx.maps.has(id)) out.push(`mapfigure(map-${id}, ${str(picture.attrs.alt ?? '')})`);
+          break;
+        }
         const style = classes(node).map((name) => PARAGRAPHS[name]).find(Boolean) ?? 'para';
         out.push(attach(`${style}(${inline(node.children, ctx)})`));
         break;
@@ -228,6 +236,8 @@ function preamble(book: Book): string {
   par(justify: false, body),
   if key != none { text(font: sans, size: 0.72em, fill: soft, pageno(key)) },
 ))
+// A map fills the width of the page and is never cut in two.
+#let mapfigure(data, alt) = block(above: 1.1em, below: 1.3em, breakable: false, image(data, format: "svg", width: 100%, alt: alt))
 #let pager(body) = block(above: 1.8em, stroke: (top: 0.4pt + line-colour), inset: (top: 0.8em), text(font: sans, size: 0.8em, par(justify: false, body)))
 
 #set document(title: ${str(meta.title)}, author: ${str(meta.title)}, description: ${str(meta.description)})
@@ -283,7 +293,11 @@ ${coverBody(book.meta)}// cover:end
 /** The book as Typst source. */
 export function writeTypst(book: Book): string {
   const known = new Set(book.docs.flatMap((doc) => doc.targets.map((target) => labelOf(target.ref))));
-  const out: string[] = [preamble(book), titlePage(book)];
+  const maps = new Set(book.maps.map((map) => map.id));
+  const out: string[] = [preamble(book)];
+  // Each map is held once, however many pages show it.
+  if (book.maps.length > 0) out.push(book.maps.map((map) => `#let map-${map.id} = bytes(${str(map.svg)})`).join('\n'));
+  out.push(titlePage(book));
 
   // The contents: the parts and their chapters, each with its page.
   out.push(`#heading(level: 1, outlined: false, ${str(book.meta.labels.contents)}) #label("contents")`);
@@ -293,7 +307,7 @@ export function writeTypst(book: Book): string {
     if (doc.kind === 'title') continue;
     const anchors = new Map(doc.targets.filter((target) => target.anchor).map((target) => [target.anchor, labelOf(target.ref)]));
     const own = doc.targets.find((target) => target.anchor === '');
-    const ctx: Context = { doc, language: book.meta.language, known, anchors };
+    const ctx: Context = { doc, language: book.meta.language, known, anchors, maps };
     let nodes: XNode[];
     try {
       nodes = parseXml(doc.html);

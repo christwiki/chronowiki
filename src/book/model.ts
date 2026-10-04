@@ -27,7 +27,8 @@ import {
   type PlaceEntry,
   type SourceEntry,
 } from '../lib/site';
-import { bookRef, type Book, type BookDoc } from './types';
+import { drawMap, type MapPin } from './maps';
+import { bookRef, type Book, type BookDoc, type BookMap } from './types';
 import { esc } from './xml';
 
 /** How many entries of the alphabetical parts go into one document. Small documents open fast on an e-reader. */
@@ -95,6 +96,47 @@ async function build(code: string, siteUrl: string): Promise<Book> {
     if (!found) return '';
     return found.href ? link(bookRef(type, id), found.label) : esc(found.label);
   }
+
+  // --- maps ----------------------------------------------------------------------
+  const maps = new Map<string, BookMap & { beyond: string[] }>();
+  const weights = (events: EventView[]) => {
+    const count = new Map<string, number>();
+    for (const event of events) for (const id of event.places) count.set(id, (count.get(id) ?? 0) + 1);
+    return count;
+  };
+  const pinsOf = (ids: Iterable<string>, weight?: Map<string, number>): MapPin[] =>
+    [...new Set(ids)].flatMap((id) => {
+      const place = site.places.get(id);
+      if (!place || !isPublished(place)) return [];
+      const { name, lat, lon, location } = place.data;
+      return [{ id, name, lat, lon, certain: location === 'known', weight: weight?.get(id) ?? 0 }];
+    });
+  /**
+   * A map of some places, as a paragraph that shows it. Maps of the same
+   * places are drawn once: every event at Jerusalem shares one.
+   */
+  function mapOf(pins: MapPin[], kind: 'places' | 'overview'): string {
+    if (pins.length === 0) return '';
+    const key = `${kind}|${pins.map((pin) => pin.id).sort().join(',')}`;
+    let map = maps.get(key);
+    if (!map) {
+      const drawn = drawMap(pins, { kind });
+      if (!drawn) return '';
+      map = { id: `m${createHash('sha1').update(key).digest('hex').slice(0, 10)}`, svg: drawn.svg, beyond: drawn.beyond.map((pin) => pin.id) };
+      maps.set(key, map);
+    }
+    const beyond = new Set(map.beyond);
+    // Read aloud, a map is the names of its places; of a crowded one, the chief of them.
+    const chief = pins
+      .filter((pin) => !beyond.has(pin.id))
+      .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+      .slice(0, 8);
+    const alt = t('map.showing', { places: i18n.list(chief.map((pin) => pin.name)) });
+    // The map of an era is framed on where most of it happened. What happened far away is named beside it.
+    const far = map.beyond.length > 0 ? `<p class="meta">${t('book.beyondMap', { places: map.beyond.map((id) => named('place', id)).join(', ') })}</p>` : '';
+    return `<p class="map"><img src="${bookRef('map', map.id)}" alt="${esc(alt)}"/></p>${far}`;
+  }
+  const overview = (events: EventView[]) => mapOf(pinsOf(events.flatMap((event) => event.places), weights(events)), 'overview');
 
   const eventRow = (event: EventView, note?: string) =>
     `<li>${link(bookRef('event', event.id), event.title, lang(event.entry))} <span class="when">${esc(note ?? event.dateLabel)}</span></li>`;
@@ -179,6 +221,8 @@ async function build(code: string, siteUrl: string): Promise<Book> {
         `<p class="date"${lang(era)}>${esc(era.data.span)}</p>`,
         `<p class="lead"${lang(era)}>${esc(era.data.summary)}</p>`,
         `<div class="prose"${lang(era)}>${prose(era, era.body ?? '').html}</div>`,
+        `<p class="label">${esc(t('eras.where'))}</p>`,
+        overview(events),
         `<p class="label">${esc(t('eras.eventsOf'))}</p>`,
         eventList(events),
       ].join(''),
@@ -207,6 +251,7 @@ async function build(code: string, siteUrl: string): Promise<Book> {
       `<h1${lang(entry)}>${esc(event.title)}</h1>`,
       `<p class="date">${esc(event.dateLabel)} · ${esc(confidence)}</p>`,
       `<p class="lead"${lang(entry)}>${esc(data.summary)}</p>`,
+      mapOf(pinsOf(event.places), 'places'),
       `<div class="prose"${lang(entry)}>${body.html}</div>`,
     ];
 
@@ -302,6 +347,7 @@ async function build(code: string, siteUrl: string): Promise<Book> {
           `<h1${lang(thread)}>${esc(thread.data.title)}</h1>`,
           `<p class="lead"${lang(thread)}>${esc(thread.data.summary)}</p>`,
           `<div class="prose"${lang(thread)}>${prose(thread, thread.body ?? '').html}</div>`,
+          overview(site.byThread.get(thread.id) ?? []),
           `<p class="label">${esc(t('threads.whole'))}</p>`,
           eventList(site.byThread.get(thread.id) ?? []),
         ].join(''),
@@ -396,6 +442,7 @@ async function build(code: string, siteUrl: string): Promise<Book> {
         ]),
         data.location === 'known' ? '' : `<p class="note">${esc(t(`places.locationNote.${data.location}`))}</p>`,
         `<p class="lead"${lang(place)}>${esc(data.summary)}</p>`,
+        mapOf(pinsOf([place.id]), 'places'),
         `<div class="prose"${lang(place)}>${prose(place, place.body ?? '').html}</div>`,
         appears('places.happened', site.byPlace.get(place.id) ?? []),
       ].join('');
@@ -473,6 +520,7 @@ async function build(code: string, siteUrl: string): Promise<Book> {
       labels: { contents: t('book.contents'), parts: partsOf(['timeline', 'threads', 'people', 'places', 'sources']) },
     },
     docs,
+    maps: [...maps.values()].map(({ id, svg }) => ({ id, svg })),
   };
 }
 

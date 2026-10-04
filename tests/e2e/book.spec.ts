@@ -59,6 +59,16 @@ test.describe('the book', () => {
     expect(broken).toEqual([]);
     expect(internal).toBeGreaterThan(1000);
 
+    // Every picture a page shows is in the book, and is a PNG, which every reader can show.
+    const shown = new Set<string>();
+    for (const text of texts.values()) for (const [, src] of text.matchAll(/<img src="([^"]+)"/g)) shown.add(src);
+    expect(shown.size).toBeGreaterThan(30);
+    for (const src of shown) {
+      expect(src).toMatch(/^maps\/m[0-9a-f]{10}\.png$/);
+      expect([...files[`OEBPS/${src}`].slice(0, 4)], src).toEqual([137, 80, 78, 71]);
+    }
+    expect(names.filter((name) => name.endsWith('.svg'))).toEqual([]);
+
     // Every page is in the manifest and in the reading order.
     const opf = strFromU8(files['OEBPS/package.opf']);
     expect(opf.match(/<itemref /g)!.length).toBe(pages.length - 1);
@@ -77,6 +87,12 @@ test.describe('the book', () => {
     expect(event).toMatch(/<a class="cite cite--source" href="sources-\d+\.xhtml#source-babylonian-chronicle-abc-5">\(/);
     expect(event).toContain('<span class="cite cite--bible">(');
     expect(event).toContain('href="era-exile-and-return.xhtml"');
+    // Its map, described for a reader who cannot see it.
+    expect(event).toMatch(/<p class="map"><img src="maps\/m[0-9a-f]{10}\.png" alt="Map showing Jerusalem and Babylon"\/><\/p>/);
+    // The era's page has a map of the whole era, and so has a place.
+    expect(strFromU8(files['OEBPS/era-exile-and-return.xhtml'])).toMatch(/Where this era unfolded<\/p><p class="map"><img src="maps\//);
+    const places = Object.keys(files).filter((name) => /OEBPS\/places-\d+\.xhtml/.test(name)).map((name) => strFromU8(files[name])).join('');
+    expect(places).toMatch(/id="place-babylon"[\s\S]*?<p class="map"><img src="maps\/m[0-9a-f]{10}\.png" alt="Map showing Babylon"\/>/);
     expect(event).toMatch(/class="pager">.*href="event-[a-z-]+\.xhtml"/s);
 
     // And the person leads back to the event.

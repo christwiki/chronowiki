@@ -1,7 +1,7 @@
 import { NodeCompiler } from '@myriaddreamin/typst-ts-node-compiler';
 import { strFromU8, unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
-import { addCover, coverSource, fontPaths } from '../../book-build.mjs';
+import { addCover, coverSource, finishEpub, fontPaths } from '../../book-build.mjs';
 import { epubFiles, linkTable, resolveLinks, writeEpub } from '../../src/book/epub';
 import { bookRef, type Book, type BookDoc } from '../../src/book/types';
 import { writeTypst } from '../../src/book/typst';
@@ -33,7 +33,18 @@ function book(docs: BookDoc[]): Book {
       labels: { contents: 'Contents', parts: [{ ref: bookRef('part', 'people'), title: 'People' }] },
     },
     docs,
+    maps: [],
   };
+}
+
+const MAP = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 52" width="90" height="52"><rect width="90" height="52" fill="#ebebeb"/><circle cx="45" cy="26" r="4"/></svg>';
+
+/** The sample book with a map on its event. */
+function mapped(): Book {
+  const withMap = sample();
+  withMap.maps.push({ id: 'm0123456789', svg: MAP });
+  withMap.docs[2].html += `<p class="map"><img src="${bookRef('map', 'm0123456789')}" alt="Map showing Jerusalem"/></p>`;
+  return withMap;
 }
 
 const sample = () =>
@@ -174,6 +185,34 @@ describe('the EPUB', () => {
     expect(Object.keys(files)).toHaveLength(Object.keys(unzipSync(writeEpub(sample()))).length + 1);
   });
 
+  it('holds each map once, as a drawing, and shows it where it belongs', () => {
+    const files = epubFiles(mapped());
+    expect(files.get('OEBPS/maps/m0123456789.svg')).toContain('<svg xmlns="http://www.w3.org/2000/svg"');
+    expect(files.get('OEBPS/event-fall.xhtml')).toContain('<p class="map"><img src="maps/m0123456789.svg" alt="Map showing Jerusalem"/></p>');
+    expect(files.get('OEBPS/package.opf')).toContain('<item id="m0123456789" href="maps/m0123456789.svg" media-type="image/svg+xml"/>');
+  });
+
+  it('refuses to show a map the book does not hold', () => {
+    const lost = mapped();
+    lost.maps = [];
+    expect(() => epubFiles(lost)).toThrow(/event-fall shows map\/m0123456789, which is not in the book/);
+  });
+
+  it('is published with its maps as pictures any reader can show', () => {
+    const png = new Uint8Array([137, 80, 78, 71]);
+    const finished = unzipSync(finishEpub(writeEpub(mapped()), { maps: new Map([['OEBPS/maps/m0123456789.svg', png]]) }));
+    expect(finished['OEBPS/maps/m0123456789.png']).toEqual(png);
+    expect(finished['OEBPS/maps/m0123456789.svg']).toBeUndefined();
+    expect(strFromU8(finished['OEBPS/event-fall.xhtml'])).toContain('<img src="maps/m0123456789.png" alt="Map showing Jerusalem"/>');
+    const opf = strFromU8(finished['OEBPS/package.opf']);
+    expect(opf).toContain('<item id="m0123456789" href="maps/m0123456789.png" media-type="image/png"/>');
+    expect(opf).not.toContain('svg');
+    // A map that could not be drawn as a picture stays as it was.
+    const kept = unzipSync(finishEpub(writeEpub(mapped()), { maps: new Map() }));
+    expect(kept['OEBPS/maps/m0123456789.svg']).toBeDefined();
+    expect(strFromU8(kept['OEBPS/package.opf'])).toContain('image/svg+xml');
+  });
+
   it('refuses a link to something the book does not hold', () => {
     const broken = sample();
     broken.docs[2].html += `<p><a href="${bookRef('place', 'atlantis')}">Atlantis</a></p>`;
@@ -227,6 +266,23 @@ describe('the PDF', () => {
     const typst = writeTypst(outside);
     expect(typst).toContain('para(seq((seq(("Atlantis",)),)))');
     expect(typst).not.toContain('place:atlantis');
+  });
+
+  it('holds each map once and sets it where it belongs, with its description', () => {
+    const typst = writeTypst(mapped());
+    expect(typst.match(/#let map-m0123456789 = bytes\(/g)).toHaveLength(1);
+    expect(typst).toContain('#mapfigure(map-m0123456789, "Map showing Jerusalem")');
+    const compiler = NodeCompiler.create({ fontArgs: [{ fontPaths: fontPaths() }] });
+    const compiled = compiler.compile({ mainFileContent: typst });
+    const diagnostics = compiled.takeDiagnostics();
+    expect(diagnostics ? compiler.fetchDiagnostics(diagnostics).map((problem: { message: string }) => problem.message) : []).toEqual([]);
+    expect(compiled.result).toBeTruthy();
+  });
+
+  it('leaves out a map the book does not hold', () => {
+    const lost = mapped();
+    lost.maps = [];
+    expect(writeTypst(lost)).not.toContain('mapfigure(map-');
   });
 
   it('links to the parts from the foot of every page', () => {

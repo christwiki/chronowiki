@@ -426,6 +426,8 @@ export const en = {
     updated: 'The book is made together with the site. When an entry is corrected here, the next edition of the book has the correction. The day it was made is on its title page.',
     /** Inside the book. */
     contents: 'Contents',
+    /** Under a map that is framed on where most happened: the places it leaves out. `{places}` is a list of names. */
+    beyondMap: 'Beyond this map: {places}',
     howTitle: 'How to read this book',
     howOrder: 'The timeline comes first, era by era and event by event. After it come the threads that run through the eras, then the people, the places and the sources in alphabetical order, and last the page that says how this book is made.',
     howLinks: 'Every underlined name is a link: touch it to go to that person, place, source or event. Each of those entries lists the events it belongs to, so there is always a way back.',

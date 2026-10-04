@@ -142,6 +142,7 @@ The book holds what the site holds, in an order made for reading: the timeline e
 - A citation leads to the source's entry, which says what the source is and where it can be read. Bible references are plain words.
 - In the PDF every list of links shows the page each one leads to, and the foot of every page links to the contents and to each part.
 - An event names the events before and after it, what it grows out of and leads to, and its neighbours on each thread.
+- Every event and every place has a map of where it happened, and every era and thread an overview of its places.
 
 Because the book is made by the same build as the site, it is never behind it: a corrected entry is corrected in the next book. The day it was made is on its cover.
 

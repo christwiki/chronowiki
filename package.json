@@ -1,6 +1,6 @@
 {
   "name": "chronowiki",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "description": "An Astro theme for history wikis built on a timeline: every event dated, placed on a map and tied to its primary sources.",
   "license": "MIT",
