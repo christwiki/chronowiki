@@ -8,7 +8,6 @@ const PAGES = [
   '/people/',
   '/sources/cyrus-cylinder/',
   '/about/',
-  '/book/',
   // German: a translated entry, and one that falls back to English.
   '/de/',
   '/de/events/first-deportation-to-babylon/',
