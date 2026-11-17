@@ -33,11 +33,6 @@ export interface WikiInput {
   locales?: LocaleInput[];
   /** The regions of the map, in the order filters and the places index list them. */
   regions: RegionInput[];
-  /**
-   * The wiki as a book for e-readers, an EPUB and a PDF made with the site and
-   * offered on a page of their own. Set to false to do without.
-   */
-  book?: boolean;
 }
 
 /** The same, with every default filled in. This is what the theme and the tools read. */
@@ -53,6 +48,4 @@ export interface WikiConfig {
   regions: string[];
   /** Region names by language, then by region id. Every language has every region. */
   regionNames: Record<string, Record<string, string>>;
-  /** Whether the wiki is also made as a book. */
-  book: boolean;
 }
