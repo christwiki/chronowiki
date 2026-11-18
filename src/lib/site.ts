@@ -9,10 +9,22 @@
  * words it was written in and says so (`entry.i18n`).
  */
 import { getCollection } from 'astro:content';
-import type { EraData, EventData, PageData, PersonData, PlaceData, SourceData, ThreadData, TranslationData } from '../content/schemas';
+import type {
+  EraData,
+  EventData,
+  PageData,
+  PersonData,
+  PlaceData,
+  QuotationData,
+  QuotationKind,
+  SourceData,
+  ThreadData,
+  TranslationData,
+} from '../content/schemas';
+import { hasEntries } from '../content/folders';
 import { DEFAULT_LOCALE, getLocale, i18nFor, type I18n, type LocaleDef } from '../i18n';
 import { applyOverlay, sourceHash, type OverlayCollection, type OverlayData } from '../i18n/overlay';
-import { parseBibleRef } from './bible';
+import { BibleRefError, parseBibleRef, type BibleRef } from './bible';
 import type { WikiDate } from './dates';
 import { byEra, groupBy, leadsTo, sortEvents, type EventNode } from './graph';
 import {
@@ -25,6 +37,7 @@ import {
   type ProseContext,
   type ProseResult,
 } from './prose';
+import { comparePositions, positionOf, SOURCE_ORDER } from './quotations';
 import { smarten } from './typography';
 
 /** How an entry stands in the language of the site being built. */
@@ -58,6 +71,7 @@ export type ThreadEntry = Localised<Stored<ThreadData>>;
 /** Every era has a colour here: its own, or one given to it by its place in the order. */
 export type EraEntry = Localised<Stored<EraData & { colour: string }>>;
 export type PageEntry = Localised<Stored<PageData>>;
+export type QuotationEntry = Localised<Stored<QuotationData>>;
 
 /** An event with everything a page needs to place it. */
 export interface EventView extends EventNode {
@@ -68,6 +82,35 @@ export interface EventView extends EventNode {
   eraEntry: EraEntry;
   /** The event's primary place, if it has one and that place is published. */
   primaryPlace?: PlaceEntry;
+}
+
+/** One side of a quotation, ready to show. */
+export interface PassageView {
+  /** "Hosea 11:1", or a source's short form with its locator. */
+  label: string;
+  /** Where the passage can be read. */
+  url: string;
+  /** The Bible passage, or the citation, that this side is. */
+  bible?: BibleRef;
+  cite?: { key: string; sourceId: string; href: string };
+  /** The book or source the passage stands in: a row of the diagram. */
+  group: { id: string; label: string; source: boolean };
+  /** Where the passage stands among all passages. */
+  sort: number[];
+  /** The event the passage belongs to, if it is published. */
+  event?: EventView;
+  /** The words of the passage. */
+  text?: string;
+}
+
+export interface QuotationView {
+  id: string;
+  entry: QuotationEntry;
+  data: QuotationEntry['data'];
+  title: string;
+  kind: QuotationKind;
+  earlier: PassageView;
+  later: PassageView;
 }
 
 export interface SiteData {
@@ -95,6 +138,12 @@ export interface SiteData {
   byThread: Map<string, EventView[]>;
   /** Source id to the events that cite it, in date order. */
   bySource: Map<string, EventView[]>;
+  /** Where a later text quotes an earlier one, in the order of the later passages. */
+  quotations: QuotationView[];
+  quotationsById: Map<string, QuotationView>;
+  /** Event id to the quotations whose earlier passage belongs to it, and to those made in it. */
+  quotedFrom: Map<string, QuotationView[]>;
+  quotedIn: Map<string, QuotationView[]>;
   /** How many of the published events, people, places and sources have their words in this language. */
   coverage: { translated: number; total: number };
 }
@@ -123,6 +172,7 @@ const ROUTES: Record<LinkType, string> = {
   source: 'sources',
   thread: 'threads',
   era: 'eras',
+  quotation: 'quotations',
 };
 
 /** The address of an entry's page in the site's language. */
@@ -135,6 +185,9 @@ export function langOf(site: SiteData, entry: { i18n: EntryI18n }): string | und
   return entry.i18n.lang === site.locale.code ? undefined : entry.i18n.lang;
 }
 
+/** A quotation's side that names a citation or source the entry does not have. */
+class PassageError extends Error {}
+
 function byId<T extends { id: string }>(entries: T[]): Map<string, T> {
   return new Map(entries.map((entry) => [entry.id, entry]));
 }
@@ -144,7 +197,7 @@ function byId<T extends { id: string }>(entries: T[]): Map<string, T> {
 const all = <Data,>(name: string) => getCollection(name as never) as unknown as Promise<Stored<Data>[]>;
 
 async function loadCollections() {
-  const [eras, threads, events, people, places, sources, pages, translations] = await Promise.all([
+  const [eras, threads, events, people, places, sources, pages, translations, quotations] = await Promise.all([
     all<EraData>('eras'),
     all<ThreadData>('threads'),
     all<EventData>('events'),
@@ -153,8 +206,9 @@ async function loadCollections() {
     all<SourceData>('sources'),
     all<PageData>('pages'),
     all<TranslationData>('translations'),
+    hasEntries('quotations') ? all<QuotationData>('quotations') : [],
   ]);
-  return { eras, threads, events, people, places, sources, pages, translations };
+  return { eras, threads, events, people, places, sources, pages, translations, quotations };
 }
 
 /**
@@ -281,7 +335,96 @@ async function load(code: string): Promise<SiteData> {
     }
   }
 
-  const counted = [...events.map((event) => event.entry), ...[...people, ...places, ...sources].filter(isPublished)];
+  // --- quotations ---------------------------------------------------------------
+  const eventsById = byId(events);
+  const sourcesById = byId(sources);
+  /** Sources in the order they were written, for the rows of the diagram. */
+  const sourceRank = new Map(
+    [...raw.sources]
+      .sort(
+        (a, b) =>
+          (a.data.written?.start ?? Number.POSITIVE_INFINITY) - (b.data.written?.start ?? Number.POSITIVE_INFINITY) ||
+          a.id.localeCompare(b.id),
+      )
+      .map((source, index) => [source.id, index]),
+  );
+
+  function passage(entry: QuotationEntry, side: QuotationData['earlier']): PassageView {
+    const event = side.event ? eventsById.get(side.event) : undefined;
+    const text = side.text === undefined ? undefined : smarten(side.text, getLocale(entry.i18n.lang).quotes);
+    if (side.bible !== undefined) {
+      const bible = parseBibleRef(side.bible, locale.bible);
+      const { book, sort } = positionOf(bible.osis);
+      return {
+        label: bible.label,
+        url: bible.url,
+        bible,
+        group: { id: book, label: locale.bible.books[book].name, source: false },
+        sort,
+        event,
+        text,
+      };
+    }
+    const key = side.cite!;
+    const def = entry.data.citations[key];
+    const source = def && sourcesById.get(def.source);
+    if (!def) throw new PassageError(`there is no citation "${key}"`);
+    if (!source) throw new PassageError(`citation "${key}" names the unknown source "${def.source}"`);
+    return {
+      label: smarten(citationLabel(source.data.cite, def.at), locale.quotes),
+      url: def.url ?? source.data.url,
+      cite: { key, sourceId: source.id, href: isPublished(source) ? i18n.href(`/sources/${source.id}/`) : '' },
+      group: { id: `source:${source.id}`, label: source.data.cite.replace(/,\s*$/, ''), source: true },
+      sort: [SOURCE_ORDER + (sourceRank.get(source.id) ?? 0), 0, 0],
+      event,
+      text,
+    };
+  }
+
+  const quotations: QuotationView[] = raw.quotations
+    .map((entry) => localise('quotations', entry))
+    .filter(isPublished)
+    .flatMap((entry): QuotationView[] => {
+      try {
+        return [
+          {
+            id: entry.id,
+            entry,
+            data: entry.data,
+            title: entry.data.title,
+            kind: entry.data.kind,
+            earlier: passage(entry, entry.data.earlier),
+            later: passage(entry, entry.data.later),
+          },
+        ];
+      } catch (error) {
+        if (!(error instanceof BibleRefError || error instanceof PassageError)) throw error;
+        const message = `quotations/${entry.id}: ${error.message}`;
+        if (!LENIENT) throw new Error(message);
+        console.warn(`[content] ${message}`);
+        return [];
+      }
+    })
+    .sort(
+      (a, b) =>
+        comparePositions(a.later.sort, b.later.sort) || comparePositions(a.earlier.sort, b.earlier.sort) || a.id.localeCompare(b.id),
+    );
+  const quotedFrom = new Map<string, QuotationView[]>();
+  const quotedIn = new Map<string, QuotationView[]>();
+  for (const quotation of quotations) {
+    for (const [index, side] of [
+      [quotedFrom, quotation.earlier],
+      [quotedIn, quotation.later],
+    ] as const) {
+      if (side.event) index.set(side.event.id, [...(index.get(side.event.id) ?? []), quotation]);
+    }
+  }
+
+  const counted = [
+    ...events.map((event) => event.entry),
+    ...[...people, ...places, ...sources].filter(isPublished),
+    ...quotations.map((quotation) => quotation.entry),
+  ];
 
   return {
     locale,
@@ -290,11 +433,11 @@ async function load(code: string): Promise<SiteData> {
     eras,
     threads,
     events,
-    eventsById: byId(events),
+    eventsById,
     unpublishedEvents: new Map(allEvents.filter((e) => !isPublished(e)).map((e) => [e.id, e.data.title])),
     people: byId(people),
     places: placesById,
-    sources: byId(sources),
+    sources: sourcesById,
     pages: byId(pages),
     erasById,
     threadsById: byId(threads),
@@ -304,6 +447,10 @@ async function load(code: string): Promise<SiteData> {
     byPerson: groupBy(events, 'people'),
     byThread: groupBy(events, 'threads'),
     bySource,
+    quotations,
+    quotationsById: byId(quotations),
+    quotedFrom,
+    quotedIn,
     coverage: { translated: counted.filter((entry) => entry.i18n.translated).length, total: counted.length },
   };
 }
@@ -351,10 +498,14 @@ export function linkFor(site: SiteData, type: LinkType, id: string): { href: str
       const era = site.erasById.get(id);
       return era && { href: entryHref(site, type, id), label: era.data.title };
     }
+    case 'quotation': {
+      const quotation = site.quotationsById.get(id);
+      return quotation && { href: entryHref(site, type, id), label: quotation.title };
+    }
   }
 }
 
-/** Any content entry. Only events, people, places and pages carry a `citations` map. */
+/** Any content entry. Only events, people, places, quotations and pages carry a `citations` map. */
 interface Renderable {
   id: string;
   collection: string;

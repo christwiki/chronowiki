@@ -9,6 +9,7 @@ people/<id>.md
 places/<id>.md
 sources/<id>.md         the texts and objects that are cited
 threads/<id>.md         storylines across the eras
+quotations/<id>.md      where a later text quotes an earlier one (optional)
 pages/about.md          how the wiki is made
 i18n/<language>/…       translations (see languages.md)
 ```
@@ -161,6 +162,54 @@ summary: "At most 280 characters."
 A paragraph on what the thread follows.
 ```
 
+## Quotations
+
+A quotation records that a later text quotes an earlier one: a prophet quoted in a gospel, a law quoted in a judgment, a chronicle quoted by a historian. Each has a page that sets the two passages side by side, and the page `/quotations/` draws them all, the books quoted on one side and the books that quote them on the other, a line for each. A wiki without a `quotations` folder has no such page and no entry for it in the navigation.
+
+```yaml
+---
+title: "Out of Egypt I called my son"   # the words quoted, or a few of them
+summary: "One or two sentences, at most 280 characters."
+kind: stated                  # stated | applied | later
+earlier:                      # the passage that is quoted
+  bible: "Hos 11:1"           # a Bible reference, or `cite:` with a key of `citations`
+  event: amos-and-hosea       # optional: the event the passage belongs to
+  text: |                     # optional: the words of the passage
+    When Israel was a child, then I loved him,
+    and called my son out of Egypt.
+later:                        # the passage that quotes it
+  bible: "Matt 2:15"
+  event: birth-of-jesus
+citations:                    # as in events
+  lxx:
+    source: septuagint
+    at: "Hosea 11:1"
+    url: https://…
+reviewed: 2026-11-18          # the day someone who did not write the entry checked every citation
+draft: true                   # an unfinished entry
+---
+
+The note, in Markdown: what the later text does with the words, and how they read where they first stand.
+```
+
+The three kinds say how the later text takes up the earlier one, and each has its own line in the drawing: solid, dashed, dotted.
+
+| Value | Use when |
+|---|---|
+| `stated` | The later text itself says that the earlier words are fulfilled or meant here. |
+| `applied` | The later text quotes the earlier words and applies them, without saying that they are fulfilled. |
+| `later` | A later writer quotes the words and reads them in this sense. |
+
+The names and descriptions of the kinds are messages (`quotationKind.<kind>.label` and `.description`), as are the page's title and opening lines (`quotations.title`, `quotations.lead`) and the headings of the two columns (`quotations.earlier`, `quotations.later`). A wiki puts its own subject in by overriding them.
+
+Each side is one passage: `bible:` for a passage of the Bible (several may be given, `"Exod 12:46; Ps 34:20"`, where the later text does not say which it means; the first decides the row of the drawing), or `cite:` for a passage of a source, by a key of the entry's own `citations`. Passages of sources stand after the books of the Bible, in the order the sources were written.
+
+`text` holds the words of a passage, so that the two can be compared without leaving the page. Quote them from a version that is free to quote, exactly, with the line breaks of verse where it has them. Leave `text` out where the version quoted and the version the links open differ in substance, and say in the note which reads what.
+
+`event` ties a passage to the timeline. The event's page then lists the quotation, under "Words from here, quoted later" or "Earlier words quoted here".
+
+Other entries link to a quotation with `[[quotation:hos-11-1-in-matt-2-15]]`.
+
 ## The method page
 
 `pages/about.md` says how the wiki is made. The footer of every page links to it and to two of its sections.
@@ -183,7 +232,7 @@ At present it holds {events} events, {people} people, {places} places and {sourc
 ## [corrections] Corrections
 ```
 
-The name in square brackets after `##` is the heading's anchor. `[confidence]` and `[corrections]` are the two the footer links to. `{events}`, `{people}`, `{places}` and `{sources}` are replaced by the counts, and a paragraph that holds only `{confidence-list}` by the four date labels with their marks, descriptions and the examples from the wiki's settings.
+The name in square brackets after `##` is the heading's anchor. `[confidence]` and `[corrections]` are the two the footer links to. A wiki that records quotations may add a section `## [quotations] …` on how they are chosen; the quotations page then links to it. `{events}`, `{people}`, `{places}`, `{sources}` and `{quotations}` are replaced by the counts, and a paragraph that holds only `{confidence-list}` by the four date labels with their marks, descriptions and the examples from the wiki's settings.
 
 ## Links and citations in the text
 
@@ -194,7 +243,7 @@ The name in square brackets after `##` is the heading's anchor. `[confidence]` a
 | `[[bible:Jer 52:12-30; 2 Chr 36:17-21]]` | one citation of two passages |
 | `[[person:jeremiah]]` | Jeremiah, linked to his page |
 | `[[place:babylon\|the city]]` | "the city", linked to Babylon |
-| `[[event:edict-of-cyrus]]`, `[[thread:covenant]]`, `[[source:cyrus-cylinder]]`, `[[era:reformation]]` | links to those pages |
+| `[[event:edict-of-cyrus]]`, `[[thread:covenant]]`, `[[source:cyrus-cylinder]]`, `[[era:reformation]]`, `[[quotation:hos-11-1-in-matt-2-15]]` | links to those pages |
 
 - Put a citation after the sentence or clause it supports, before the full stop. The brackets are added for you.
 - A link without a label shows the target's own name or title. An event's title rarely fits in the middle of a sentence, so give event links a label: `the [[event:council-of-nicaea|council of 325]]`.
@@ -209,7 +258,7 @@ The name in square brackets after `##` is the heading's anchor. `[confidence]` a
 | Code | Rule |
 |---|---|
 | `yaml`, `schema`, `id` | The front matter is valid and has the fields above; the file name is an id and is not used twice. |
-| `ref` | Every person, place, thread, era, event and source an entry names exists. |
+| `ref` | Every person, place, thread, era, event, quotation and source an entry names exists. |
 | `token` | Every `[[…]]` in the text is well formed, every `[[cite:key]]` is defined in the entry's `citations`, every Bible reference exists. |
 | `primary` | An event's narrative cites at least one source. |
 | `dating` | An event whose date is not firm has a dating note. |
@@ -217,9 +266,10 @@ The name in square brackets after `##` is the heading's anchor. `[confidence]` a
 | `era-folder` | An event's file is in the folder of its era. |
 | `follows` | No event follows itself, and `follows` does not run in a circle. |
 | `duplicate` | No two people, or two places, share a name. |
+| `quotation` | The two passages of a quotation are not the same passage. |
 | `language`, `page` | Every language has every message, and the method page exists. |
-| `length`, `era-range`, `follows-order` (warnings) | The narrative has 80 to 700 words; the year lies within its era; an event does not follow a later one. |
-| `draft`, `orphan`, `reviewed`, `unused-citation` (release rules) | No drafts; no person, place or source that no event refers to; every event independently checked; no citation defined but not used. |
+| `length`, `era-range`, `follows-order`, `quotation-order` (warnings) | The narrative has 80 to 700 words; the year lies within its era; an event does not follow a later one; the earlier passage of a quotation does not belong to the later event. |
+| `draft`, `orphan`, `reviewed`, `unused-citation` (release rules) | No drafts; no person, place or source that nothing refers to; every event and every quotation independently checked; no citation defined but not used. |
 
 Translations have rules of their own, described in [languages.md](languages.md).
 

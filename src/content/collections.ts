@@ -12,12 +12,14 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import config from 'virtual:chronowiki/config';
+import { hasEntries } from './folders';
 import {
   eraSchema,
   eventSchema,
   pageSchema,
   personSchema,
   placeSchema,
+  quotationSchema,
   sourceSchema,
   threadSchema,
   translationSchema,
@@ -43,6 +45,11 @@ export function wikiCollections() {
     sources: defineCollection({ loader: files('sources'), schema: sourceSchema }),
     threads: defineCollection({ loader: files('threads'), schema: threadSchema }),
     eras: defineCollection({ loader: files('eras'), schema: eraSchema }),
+    // Not every wiki records quotations. One without the folder has an empty collection, and no page of them.
+    quotations: defineCollection({
+      loader: hasEntries('quotations') ? files('quotations') : () => [],
+      schema: quotationSchema,
+    }),
     pages: defineCollection({ loader: files('pages'), schema: pageSchema }),
     /**
      * Translations of all of the above. Here the id keeps its folders:

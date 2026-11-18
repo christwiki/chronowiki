@@ -80,6 +80,7 @@ npx chronowiki i18n stamp de                         # after revising out-of-dat
 | Kind | Fields |
 |---|---|
 | events | `title`, `summary`, `dating`, `dateDisplay`, and the text |
+| quotations | `title`, `summary`, `earlierText`, `laterText` (the words of the two passages, from a version this language may quote), and the text |
 | people | `name`, `altNames`, `role`, `summary`, `bornDisplay`, `diedDisplay`, and the text |
 | places | `name`, `altNames`, `modern`, `summary`, and the text |
 | sources | `title`, `author`, `cite`, `language`, `edition`, `holding`, `summary`, `writtenDisplay`, `links` (labels, in the original's order), and the text |

@@ -62,6 +62,7 @@ function fixture(): RawContent {
         'events/exile-and-return/fall-of-jerusalem.md',
       ),
     ],
+    quotations: [],
   };
 }
 
@@ -239,6 +240,75 @@ describe('validateContent', () => {
 
   it('warns on body length', () =>
     expect(codes(edit((c) => { c.events[0].body = 'Short [[bible:2 Kings 25:8-10]].'; }))).toContain('warning:length'));
+});
+
+describe('quotations', () => {
+  const quotation = (data: Record<string, unknown> = {}, body = 'In Jeremiah the lines that follow promise a return [[bible:Jer 31:16-17]].') =>
+    entry(
+      'jer-31-15-in-matt-2-17',
+      {
+        title: 'A voice was heard in Ramah',
+        summary: 'S',
+        kind: 'stated',
+        earlier: { bible: 'Jer 31:15', event: 'fall-of-jerusalem' },
+        later: { bible: 'Matt 2:17-18' },
+        reviewed: '2026-11-18',
+        ...data,
+      },
+      body,
+      'quotations/jer-31-15-in-matt-2-17.md',
+    );
+  const withQuotation = (data?: Record<string, unknown>, body?: string, strict = false) =>
+    validateContent(edit((c) => { c.quotations.push(quotation(data, body)); }), { strict })
+      .filter((i) => i.file.startsWith('quotations/'))
+      .map((i) => `${i.level}:${i.code}`);
+
+  it('passes a clean quotation, even in strict mode', () => expect(withQuotation(undefined, undefined, true)).toEqual([]));
+
+  it('needs one passage on each side, of the Bible or of a source', () => {
+    expect(withQuotation({ later: {} })).toEqual(['error:schema']);
+    expect(withQuotation({ later: { bible: 'Matt 2:17', cite: 'x' } })).toEqual(['error:schema']);
+  });
+
+  it('checks the Bible passages', () => expect(withQuotation({ earlier: { bible: 'Jer 99:1' } })).toEqual(['error:token']));
+
+  it('checks the events the passages belong to', () =>
+    expect(withQuotation({ later: { bible: 'Matt 2:17-18', event: 'nowhere' } })).toEqual(['error:ref']));
+
+  it('takes a passage of a source named in the citations', () => {
+    const later = { cite: 'chron' };
+    expect(withQuotation({ later, citations: { chron: { source: 'babylonian-chronicle-abc-5', at: 'rev. 11' } } }, undefined, true)).toEqual([]);
+    expect(withQuotation({ later })).toEqual(['error:token']);
+    expect(withQuotation({ later, citations: { chron: { source: 'nothing' } } })).toEqual(['error:ref']);
+  });
+
+  it('rejects a passage quoted in itself', () =>
+    expect(withQuotation({ later: { bible: 'Jer 31:15' } })).toEqual(['error:quotation']));
+
+  it('checks links and citations in the text', () =>
+    expect(withQuotation(undefined, 'See [[person:nobody]] and [[cite:nope]].').sort()).toEqual(['error:ref', 'error:token']));
+
+  it('keeps a source that only a quotation cites from being an orphan', () => {
+    const c = edit((c) => {
+      ev(c).citations = {};
+      ev(c).dating = 'Fixed by [[bible:2 Kings 25:8]].';
+      c.quotations.push(quotation({ later: { cite: 'chron' }, citations: { chron: { source: 'babylonian-chronicle-abc-5' } } }));
+    });
+    expect(validateContent(c, { strict: true })).toEqual([]);
+  });
+
+  it('holds back a draft and an unchecked quotation from a release', () => {
+    expect(withQuotation({ reviewed: undefined })).toEqual(['warning:reviewed']);
+    expect(withQuotation({ reviewed: undefined }, undefined, true)).toEqual(['error:reviewed']);
+    expect(withQuotation({ draft: true }, undefined, true)).toEqual(['error:draft']);
+  });
+
+  it('links to a quotation from other text', () => {
+    const linked = (id: string) =>
+      codes(edit((c) => { c.quotations.push(quotation()); c.events[0].body += ` [[quotation:${id}]]`; }));
+    expect(linked('jer-31-15-in-matt-2-17')).toEqual([]);
+    expect(linked('missing')).toEqual(['error:ref']);
+  });
 });
 
 describe('regions', () => {

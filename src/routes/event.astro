@@ -4,6 +4,7 @@ import DateLabel from '../components/DateLabel.astro';
 import EntryChips from '../components/EntryChips.astro';
 import EventList from '../components/EventList.astro';
 import MiniMap from '../components/MiniMap.astro';
+import QuotationList from '../components/QuotationList.astro';
 import SourceCards from '../components/SourceCards.astro';
 import SourceList from '../components/SourceList.astro';
 import TranslationNotice from '../components/TranslationNotice.astro';
@@ -46,6 +47,10 @@ const threads = event.threads.flatMap((id) => {
   if (!thread) return [];
   return { thread, ...neighbours(site.byThread.get(id) ?? [], event.id) };
 });
+
+/** Quotations whose earlier passage belongs to this event, and quotations made in it. */
+const quotedLater = site.quotedFrom.get(event.id) ?? [];
+const quotedHere = site.quotedIn.get(event.id) ?? [];
 
 const timeline = neighbours(site.events, event.id);
 const reviewed = data.reviewed ? i18n.day(data.reviewed) : undefined;
@@ -149,6 +154,30 @@ const reviewed = data.reviewed ? i18n.day(data.reviewed) : undefined;
                 <div>
                   <h3 class="section-title">{t('event.leadsTo')}</h3>
                   <EventList events={leadsTo} />
+                </div>
+              )}
+            </div>
+          </section>
+        )
+      }
+
+      {
+        (quotedLater.length > 0 || quotedHere.length > 0) && (
+          <section class="context" aria-labelledby="quotations-title">
+            <h2 id="quotations-title">
+              <a href={href('/quotations/')}>{t('event.quotations')}</a>
+            </h2>
+            <div class="context__columns">
+              {quotedHere.length > 0 && (
+                <div>
+                  <h3 class="section-title">{t('event.quotedHere')}</h3>
+                  <QuotationList quotations={quotedHere} />
+                </div>
+              )}
+              {quotedLater.length > 0 && (
+                <div>
+                  <h3 class="section-title">{t('event.quotedLater')}</h3>
+                  <QuotationList quotations={quotedLater} />
                 </div>
               )}
             </div>
@@ -344,6 +373,16 @@ const reviewed = data.reviewed ? i18n.day(data.reviewed) : undefined;
   .context h2 {
     font-size: var(--step-2);
     margin-bottom: var(--space-4);
+  }
+
+  .context h2 a {
+    text-decoration: none;
+  }
+
+  .context h2 a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 0.06em;
+    text-underline-offset: 0.18em;
   }
 
   .context__columns {

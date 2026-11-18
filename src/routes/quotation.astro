@@ -1,0 +1,310 @@
+---
+import '../styles/index.css';
+import EntryHeader from '../components/EntryHeader.astro';
+import EventList from '../components/EventList.astro';
+import QuotationMark from '../components/QuotationMark.astro';
+import SourceCards from '../components/SourceCards.astro';
+import SourceList from '../components/SourceList.astro';
+import { getLocale, localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import type { BibleRef } from '../lib/bible';
+import type { UsedCitation } from '../lib/prose';
+import { entryHref, getSite, langOf, proseContext, renderBody, type PassageView } from '../lib/site';
+import { citationLabel } from '../lib/prose';
+import { smarten } from '../lib/typography';
+
+export async function getStaticPaths() {
+  const site = await getSite();
+  return localeParams().flatMap((locale) => site.quotations.map((quotation) => ({ params: { ...locale, id: quotation.id } })));
+}
+
+const i18n = useI18n(Astro);
+const { t, href, arrow } = i18n;
+const site = await getSite(i18n.code);
+const quotation = site.quotationsById.get(Astro.params.id!)!;
+const { entry, data } = quotation;
+const lang = langOf(site, entry);
+const body = renderBody(site, entry);
+const textLocale = getLocale(entry.i18n.lang);
+
+/** Everything cited on the page: the two passages first, then what the note cites, each once. */
+const bible: BibleRef[] = [];
+const cites: UsedCitation[] = [];
+const context = proseContext(site, entry);
+for (const side of [quotation.earlier, quotation.later]) {
+  if (side.bible && !bible.some((ref) => ref.osis === side.bible!.osis)) bible.push(side.bible);
+  if (side.cite) {
+    const def = data.citations[side.cite.key];
+    const source = context.source(def.source)!;
+    const used: UsedCitation = {
+      key: side.cite.key,
+      source,
+      url: def.url ?? source.url,
+      label: smarten(citationLabel(source.cite, def.at), textLocale.quotes),
+    };
+    if (def.at !== undefined) used.at = def.at;
+    cites.push(used);
+  }
+}
+for (const ref of body.bible) if (!bible.some((b) => b.osis === ref.osis)) bible.push(ref);
+for (const cite of body.cites) if (!cites.some((c) => c.key === cite.key)) cites.push(cite);
+
+const sides: { passage: PassageView; heading: string; event: string }[] = [
+  { passage: quotation.earlier, heading: t('quotations.passageEarlier'), event: t('quotations.eventEarlier') },
+  { passage: quotation.later, heading: t('quotations.passageLater'), event: t('quotations.eventLater') },
+];
+/** Scripture is quoted from one public-domain version, named once under the two passages. */
+const quotesScripture = sides.some(({ passage }) => passage.bible && passage.text);
+/** Where one passage is given in words and the other is not, the page says that this is meant. */
+const givesWords = sides.some(({ passage }) => passage.text);
+const events = sides.filter(({ passage }) => passage.event);
+
+const index = site.quotations.indexOf(quotation);
+const previous = site.quotations[index - 1];
+const next = site.quotations[index + 1];
+const reviewed = data.reviewed ? i18n.day(data.reviewed) : undefined;
+---
+
+<Base title={quotation.title} description={data.summary} section="quotations">
+  <article data-pagefind-body>
+    <EntryHeader
+      kicker={t('nav.quotations')}
+      kickerHref={href('/quotations/')}
+      title={quotation.title}
+      lead={data.summary}
+      kind={t('kind.quotation')}
+      entry={entry}
+    >
+      <Fragment slot="facts">
+        <span>{t('quotations.pair', { earlier: quotation.earlier.label, later: quotation.later.label })}</span>
+        <span class="quotation__kind">
+          <QuotationMark kind={quotation.kind} />
+          {t(`quotationKind.${quotation.kind}.label`)}
+        </span>
+      </Fragment>
+    </EntryHeader>
+
+    <div class="page entry-body">
+      <section class="quotation__pair" aria-label={t('quotations.pair', { earlier: quotation.earlier.label, later: quotation.later.label })}>
+        {
+          sides.map(({ passage, heading }) => (
+            <div class="quotation__passage">
+              <h2 class="section-title">{heading}</h2>
+              <p class="quotation__ref">
+                <a class:list={['cite', passage.bible ? 'cite--bible' : 'cite--source']} href={passage.url} target="_blank" rel="noopener">
+                  {passage.label}
+                </a>
+              </p>
+              {passage.text && (
+                <blockquote class="quotation__text" lang={lang}>
+                  {passage.text.split(/\n\s*\n/).map((paragraph) => (
+                    <p>{paragraph}</p>
+                  ))}
+                </blockquote>
+              )}
+              {!passage.text && givesWords && <p class="quotation__omitted meta">{t('quotations.textOmitted')}</p>}
+            </div>
+          ))
+        }
+        <p class="quotation__kind-note meta">
+          <strong>{t(`quotationKind.${quotation.kind}.label`)}.</strong>{' '}
+          {t(`quotationKind.${quotation.kind}.description`)}
+          {quotesScripture && ` ${t('quotations.quotedFrom', { version: textLocale.bible.quoted })}`}
+        </p>
+      </section>
+
+      {
+        body.html && (
+          <section class="quotation__note">
+            <h2>{t('quotations.note')}</h2>
+            <div class="prose" lang={lang} set:html={body.html} />
+          </section>
+        )
+      }
+
+      <section class="quotation__sources" id="sources" aria-labelledby="sources-title">
+        <h2 class="section-title" id="sources-title">{t('common.primarySources')}</h2>
+        <SourceList bible={bible} cites={cites} lang={lang} />
+        <p class="quotation__reviewed meta">{reviewed ? t('event.reviewed', { date: reviewed }) : t('event.awaiting')}</p>
+      </section>
+
+      {
+        events.length > 0 && (
+          <section class="entry-body__section" aria-labelledby="context-title" data-pagefind-ignore>
+            <h2 id="context-title">{t('quotations.context')}</h2>
+            <div class="quotation__events">
+              {events.map(({ passage, event }) => (
+                <div>
+                  <h3 class="section-title">{event}</h3>
+                  <EventList events={[passage.event!]} summaries />
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+      }
+
+      <nav class="quotation__pager" aria-label={t('quotations.others')} data-pagefind-ignore>
+        {
+          previous ? (
+            <a href={entryHref(site, 'quotation', previous.id)} rel="prev">
+              <span class="meta">
+                {arrow.back} {t('quotations.pair', { earlier: previous.earlier.label, later: previous.later.label })}
+              </span>
+              <span lang={langOf(site, previous.entry)}>{previous.title}</span>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+        {
+          next && (
+            <a class="quotation__next" href={entryHref(site, 'quotation', next.id)} rel="next">
+              <span class="meta">
+                {t('quotations.pair', { earlier: next.earlier.label, later: next.later.label })} {arrow.forward}
+              </span>
+              <span lang={langOf(site, next.entry)}>{next.title}</span>
+            </a>
+          )
+        }
+      </nav>
+    </div>
+  </article>
+
+  <SourceCards slot="after" ids={cites.map((cite) => cite.source.id)} />
+</Base>
+
+<style>
+  .quotation__kind {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .quotation__pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  .quotation__passage {
+    padding: var(--space-5);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-large);
+    background: var(--surface);
+  }
+
+  .quotation__ref {
+    font-family: var(--font-sans);
+    font-size: var(--ui);
+    font-weight: 600;
+  }
+
+  .quotation__ref .cite {
+    font-size: inherit;
+    white-space: normal;
+  }
+
+  .quotation__ref .cite::after {
+    content: ' ↗';
+    font-size: 0.85em;
+  }
+
+  .quotation__text {
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    border: 0;
+    font-size: var(--step-0);
+    line-height: 1.55;
+    /* The lines of a psalm or an oracle stay lines. */
+    white-space: pre-line;
+  }
+
+  .quotation__text p + p {
+    margin-top: var(--space-3);
+  }
+
+  .quotation__omitted {
+    margin-top: var(--space-3);
+    max-width: 34rem;
+  }
+
+  .quotation__kind-note {
+    grid-column: 1 / -1;
+    max-width: var(--measure);
+  }
+
+  .quotation__kind-note strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .quotation__note {
+    margin-top: var(--space-6);
+    max-width: var(--measure);
+  }
+
+  .quotation__note > h2 {
+    font-size: var(--step-2);
+    margin-bottom: var(--space-4);
+  }
+
+  .quotation__sources {
+    margin-top: var(--space-7);
+    max-width: var(--measure);
+    scroll-margin-top: var(--space-5);
+  }
+
+  .quotation__reviewed {
+    margin-top: var(--space-3);
+  }
+
+  .quotation__events {
+    display: grid;
+    gap: var(--space-5) var(--space-7);
+  }
+
+  .quotation__pager {
+    margin-top: var(--space-7);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    font-size: var(--step-1);
+  }
+
+  .quotation__pager a {
+    display: grid;
+    gap: 0.1rem;
+    text-decoration: none;
+    line-height: 1.3;
+  }
+
+  .quotation__pager a:hover span:last-child {
+    text-decoration: underline;
+    text-decoration-thickness: 0.06em;
+    text-underline-offset: 0.18em;
+  }
+
+  .quotation__next {
+    text-align: end;
+  }
+
+  @media (min-width: 52rem) {
+    .quotation__pair,
+    .quotation__events {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 34rem) {
+    .quotation__pager {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .quotation__next {
+      text-align: start;
+    }
+  }
+</style>

@@ -1,0 +1,90 @@
+---
+/**
+ * A list of quotations: the words, the two passages, and optionally the
+ * summary. Used on the quotations page and on the pages of the events the
+ * passages belong to.
+ */
+import { useI18n } from '../i18n';
+import { entryHref, getSite, langOf, type QuotationView } from '../lib/site';
+import QuotationMark from './QuotationMark.astro';
+
+interface Props {
+  quotations: QuotationView[];
+  /** Show each quotation's summary under its passages. */
+  summaries?: boolean;
+}
+
+const { quotations, summaries = false } = Astro.props;
+const { t, code } = useI18n(Astro);
+const site = await getSite(code);
+---
+
+<ul class="quotation-list" role="list">
+  {
+    quotations.map((quotation) => {
+      const lang = langOf(site, quotation.entry);
+      return (
+        <li
+          class="quotation-list__item"
+          data-quotation={quotation.id}
+          data-kind={quotation.kind}
+          data-earlier={quotation.earlier.group.id}
+          data-later={quotation.later.group.id}
+        >
+          <a class="quotation-list__title" href={entryHref(site, 'quotation', quotation.id)} lang={lang}>
+            {quotation.title}
+          </a>
+          <p class="quotation-list__passages meta">
+            <QuotationMark kind={quotation.kind} />
+            <span>
+              {t('quotations.pair', { earlier: quotation.earlier.label, later: quotation.later.label })}
+              <span class="quotation-list__kind"> · {t(`quotationKind.${quotation.kind}.label`)}</span>
+            </span>
+          </p>
+          {summaries && <p class="quotation-list__summary" lang={lang}>{quotation.data.summary}</p>}
+        </li>
+      );
+    })
+  }
+</ul>
+
+<style>
+  .quotation-list {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .quotation-list__item {
+    display: grid;
+    gap: 0.15rem;
+    align-content: start;
+  }
+
+  .quotation-list__title {
+    font-size: 1.125rem;
+    line-height: 1.3;
+    text-decoration-color: var(--rule-strong);
+  }
+
+  .quotation-list__title:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .quotation-list__passages {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  .quotation-list__passages :global(.quotation-mark) {
+    align-self: center;
+  }
+
+  .quotation-list__summary {
+    margin-top: 0.15rem;
+    font-size: 0.94rem;
+    line-height: 1.45;
+    color: var(--ink-muted);
+    max-width: 60ch;
+  }
+</style>

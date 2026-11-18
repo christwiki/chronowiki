@@ -8,10 +8,14 @@ const PAGES = [
   '/people/',
   '/sources/cyrus-cylinder/',
   '/about/',
+  '/quotations/',
+  '/quotations/jer-31-15-in-matt-2-17/',
+  '/quotations/isa-53-7-in-origen-against-celsus/',
   // German: a translated entry, and one that falls back to English.
   '/de/',
   '/de/events/first-deportation-to-babylon/',
   '/de/events/edict-of-cyrus/',
+  '/de/quotations/',
 ];
 
 for (const scheme of ['light', 'dark'] as const) {

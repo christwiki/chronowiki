@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { dateSchema, eraSchema, eventSchema, personSchema, placeSchema, sourceSchema, threadSchema } from '../../src/content/schemas';
+import {
+  dateSchema,
+  eraSchema,
+  eventSchema,
+  personSchema,
+  placeSchema,
+  quotationSchema,
+  sourceSchema,
+  threadSchema,
+} from '../../src/content/schemas';
 
 const ok = (schema: { safeParse(v: unknown): { success: boolean } }, v: unknown) => schema.safeParse(v).success;
 
@@ -93,4 +102,18 @@ describe('eraSchema', () => {
 
 describe('threadSchema', () => {
   it('puts a thread without a number first', () => expect(threadSchema.parse({ title: 'Covenant', summary: 'S' }).order).toBe(0));
+});
+
+describe('quotationSchema', () => {
+  const base = { title: 'T', summary: 'S', kind: 'stated', earlier: { bible: 'Hos 11:1' }, later: { bible: 'Matt 2:15' } };
+  it('fills defaults', () => expect(quotationSchema.parse(base)).toMatchObject({ citations: {}, draft: false }));
+  it('takes the event and the words of a passage', () =>
+    expect(ok(quotationSchema, { ...base, earlier: { bible: 'Hos 11:1', event: 'amos-and-hosea', text: 'When Israel was a child' } })).toBe(true));
+  it('takes a passage of a cited source', () => expect(ok(quotationSchema, { ...base, later: { cite: 'origen' } })).toBe(true));
+  it('rejects a side with no passage, or with two', () => {
+    expect(ok(quotationSchema, { ...base, later: { event: 'birth-of-jesus' } })).toBe(false);
+    expect(ok(quotationSchema, { ...base, later: { bible: 'Matt 2:15', cite: 'origen' } })).toBe(false);
+  });
+  it('rejects an unknown kind', () => expect(ok(quotationSchema, { ...base, kind: 'allusion' })).toBe(false));
+  it('rejects a long summary', () => expect(ok(quotationSchema, { ...base, summary: 'x'.repeat(281) })).toBe(false));
 });
