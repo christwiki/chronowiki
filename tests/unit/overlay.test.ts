@@ -43,6 +43,40 @@ describe('wordsOf', () => {
   });
 });
 
+describe('the two passages of a quotation', () => {
+  const quotation = {
+    title: 'Out of Egypt I called my son',
+    summary: 'S',
+    kind: 'stated',
+    earlier: { bible: 'Hos 11:1', event: 'amos-and-hosea', text: 'When Israel was a child, then I loved him' },
+    later: { bible: 'Matt 2:15' },
+    citations: { lxx: { source: 'septuagint', at: 'Hosea 11:1' } },
+  };
+
+  it('are words like any others', () => {
+    expect(wordsOf('quotations', quotation)).toEqual({
+      title: quotation.title,
+      summary: 'S',
+      earlierText: quotation.earlier.text,
+      citations: { lxx: { at: 'Hosea 11:1' } },
+    });
+  });
+
+  it('are put in by a translation, which leaves the passages themselves alone', () => {
+    const out = applyOverlay('quotations', quotation, { source: 'x', title: 'Aus Ägypten', earlierText: 'Da Israel jung war' });
+    expect(out.title).toBe('Aus Ägypten');
+    expect(out.earlier).toEqual({ bible: 'Hos 11:1', event: 'amos-and-hosea', text: 'Da Israel jung war' });
+    expect(out.later).toEqual({ bible: 'Matt 2:15' });
+    expect(quotation.earlier.text).toBe('When Israel was a child, then I loved him');
+  });
+
+  it('change the hash when they change', () => {
+    const before = sourceHash('quotations', quotation, '');
+    expect(sourceHash('quotations', { ...quotation, earlier: { ...quotation.earlier, text: 'Other words' } }, '')).not.toBe(before);
+    expect(sourceHash('quotations', { ...quotation, earlier: { ...quotation.earlier, event: 'call-of-isaiah' } }, '')).toBe(before);
+  });
+});
+
 describe('sourceHash', () => {
   it('is twelve hex digits', () => expect(sourceHash('events', event, body)).toMatch(/^[0-9a-f]{12}$/));
 
@@ -183,6 +217,7 @@ describe('validateTranslations', () => {
     sources: [entry('chronicle-5', { title: 'Chronicle 5', cite: 'Chronicle 5', summary: 'S' })],
     threads: [],
     eras: [],
+    quotations: [],
   } as unknown as RawContent;
   const options = { locales: [{ code: 'en', status: 'live' as const }, { code: 'de', status: 'preview' as const }], defaultLocale: 'en' };
 

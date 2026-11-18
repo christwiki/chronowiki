@@ -1,0 +1,71 @@
+---
+import '../styles/index.css';
+import QuotationDiagram from '../components/QuotationDiagram.astro';
+import QuotationList from '../components/QuotationList.astro';
+import { localeParams, useI18n } from '../i18n';
+import Base from '../layouts/Base.astro';
+import { getSite, type QuotationView } from '../lib/site';
+
+/** A wiki that records no quotations has no page of them. */
+export async function getStaticPaths() {
+  const site = await getSite();
+  return site.quotations.length > 0 ? localeParams().map((params) => ({ params })) : [];
+}
+
+const { t, href, code } = useI18n(Astro);
+const site = await getSite(code);
+const { quotations } = site;
+/** The method page may say how the quotations are chosen, under a heading with the anchor `[quotations]`. */
+const hasMethod = /^## \[quotations\]/m.test(site.pages.get('about')?.body ?? '');
+
+/** The list follows the later texts: one group for each book that quotes. */
+const groups: { id: string; label: string; quotations: QuotationView[] }[] = [];
+for (const quotation of quotations) {
+  const { id, label } = quotation.later.group;
+  const group = groups.find((candidate) => candidate.id === id);
+  if (group) group.quotations.push(quotation);
+  else groups.push({ id, label, quotations: [quotation] });
+}
+const anchor = (id: string) => `in-${id.replace(/[^A-Za-z0-9]+/g, '-').toLowerCase()}`;
+---
+
+<Base title={t('quotations.title')} description={t('quotations.description')} section="quotations">
+  <div class="page index">
+    <header class="index__header">
+      <h1>{t('quotations.title')}</h1>
+      <p class="lead">{t('quotations.lead', { count: quotations.length })}</p>
+      {
+        hasMethod && (
+          <p class="index__method meta">
+            <a href={href('/about/#quotations')}>{t('quotations.method')}</a>
+          </p>
+        )
+      }
+    </header>
+
+    <QuotationDiagram quotations={quotations} />
+
+    {
+      groups.map((group) => (
+        <section class="index__group" aria-labelledby={anchor(group.id)} data-quotation-group>
+          <h2 id={anchor(group.id)}>
+            {group.label}
+            <small>{t('quotations.count', { count: group.quotations.length })}</small>
+          </h2>
+          <QuotationList quotations={group.quotations} summaries />
+        </section>
+      ))
+    }
+  </div>
+</Base>
+
+<style>
+  .index__method {
+    margin-top: var(--space-3);
+  }
+
+  .index :global(.quotation-list) {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    gap: var(--space-5) var(--space-6);
+  }
+</style>

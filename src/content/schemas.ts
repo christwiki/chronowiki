@@ -1,5 +1,5 @@
 /**
- * Schemas for the six kinds of entry. Shared by Astro's content collections
+ * Schemas for the seven kinds of entry. Shared by Astro's content collections
  * (`wikiCollections()` in `collections.ts`) and by the validator, so there is
  * one definition of what a valid entry is.
  *
@@ -30,6 +30,13 @@ export const SOURCE_KINDS = [
 ] as const;
 
 export const PLACE_KINDS = ['city', 'region', 'mountain', 'river', 'sea', 'island', 'site'] as const;
+
+/**
+ * How a later text takes up an earlier one. `stated`: it says itself that the
+ * earlier words are fulfilled here. `applied`: it quotes them and
+ * applies them without saying so. `later`: the reading is a later writer's.
+ */
+export const QUOTATION_KINDS = ['stated', 'applied', 'later'] as const;
 
 /** How well a place's position is known. */
 export const LOCATION_KINDS = ['known', 'approximate', 'traditional', 'disputed'] as const;
@@ -163,6 +170,40 @@ export const eraSchema = z.strictObject({
   summary,
 });
 
+const citationKey = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'must be a key of this entry\'s citations');
+
+/**
+ * One side of a quotation: a passage of the Bible, or a passage of a source
+ * named in the entry's `citations`.
+ */
+const passageSchema = z
+  .strictObject({
+    /** A Bible reference, written as in the text: "Hos 11:1". */
+    bible: z.string().min(1).optional(),
+    /** A key of this entry's `citations`. */
+    cite: citationKey.optional(),
+    /** The event the passage belongs to, where the wiki has one. */
+    event: ID.optional(),
+    /** The words of the passage, from the public-domain version the wiki quotes. */
+    text: z.string().min(1).optional(),
+  })
+  .refine((side) => (side.bible === undefined) !== (side.cite === undefined), 'give either "bible" or "cite", and not both');
+
+/** A later text quoting an earlier one. */
+export const quotationSchema = z.strictObject({
+  /** The words quoted, or a few of them. */
+  title: z.string().min(1),
+  summary,
+  kind: z.enum(QUOTATION_KINDS),
+  /** The passage that is quoted. */
+  earlier: passageSchema,
+  /** The passage that quotes it. */
+  later: passageSchema,
+  citations: citationsSchema,
+  reviewed: z.coerce.date().optional(),
+  draft: z.boolean().default(false),
+});
+
 /** A page of running text that is not an entry, such as the method page. */
 export const pageSchema = z.strictObject({
   title: z.string().min(1),
@@ -190,6 +231,8 @@ export const translationSchema = z.strictObject({
   bornDisplay: z.string().min(1).optional(),
   diedDisplay: z.string().min(1).optional(),
   writtenDisplay: z.string().min(1).optional(),
+  earlierText: z.string().min(1).optional(),
+  laterText: z.string().min(1).optional(),
   author: z.string().min(1).optional(),
   cite: z.string().min(1).optional(),
   language: z.string().min(1).optional(),
@@ -207,6 +250,8 @@ export type PlaceData = z.infer<typeof placeSchema>;
 export type SourceData = z.infer<typeof sourceSchema>;
 export type ThreadData = z.infer<typeof threadSchema>;
 export type EraData = z.infer<typeof eraSchema>;
+export type QuotationData = z.infer<typeof quotationSchema>;
+export type QuotationKind = (typeof QUOTATION_KINDS)[number];
 
 export const SCHEMAS = {
   events: eventSchema,
@@ -215,6 +260,7 @@ export const SCHEMAS = {
   sources: sourceSchema,
   threads: threadSchema,
   eras: eraSchema,
+  quotations: quotationSchema,
 } as const;
 
 export type CollectionName = keyof typeof SCHEMAS;

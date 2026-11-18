@@ -25,6 +25,7 @@ export const en = {
     timeline: 'Timeline',
     map: 'Map',
     threads: 'Threads',
+    quotations: 'Quotations',
     people: 'People',
     places: 'Places',
     sources: 'Sources',
@@ -146,6 +147,7 @@ export const en = {
     source: 'Source',
     thread: 'Thread',
     era: 'Era',
+    quotation: 'Quotation',
     page: 'Page',
   },
 
@@ -176,6 +178,9 @@ export const en = {
     pager: 'Timeline',
     earlier: 'Earlier · {date}',
     later: 'Later · {date}',
+    quotations: 'Quotations',
+    quotedLater: 'Words from here, quoted later',
+    quotedHere: 'Earlier words quoted here',
   },
 
   sourceList: {
@@ -353,6 +358,64 @@ export const en = {
     lead: 'Storylines that run across the eras. Follow one from start to finish to see how events far apart in time belong together.',
     whole: 'The thread from start to finish',
     others: 'Other threads',
+  },
+
+  quotations: {
+    title: 'Quotations',
+    description:
+      'Where a later text quotes an earlier one: the two passages side by side, and how the earlier words read in their own setting.',
+    lead: {
+      one: '{count} place where a later text quotes an earlier one. The entry sets the two passages side by side and says how the earlier words read in their own setting.',
+      other:
+        '{count} places where a later text quotes an earlier one. Each line joins two passages; each entry sets them side by side and says how the earlier words read in their own setting.',
+    },
+    /** The headings of the two columns of the diagram. */
+    earlier: 'Quoted',
+    later: 'Quoted in',
+    /** What a screen reader is told in place of the drawing. */
+    diagram: {
+      one: 'A diagram of {count} quotation: a line from the book quoted to the book that quotes it. The list after it gives the same.',
+      other:
+        'A diagram of {count} quotations, each a line from the book quoted to the book that quotes it. The list after it gives every one.',
+    },
+    legend: 'How the lines are drawn',
+    hint: 'Choose a book or a kind of line to see only its quotations.',
+    /** What a book in the diagram says of itself. */
+    book: { one: '{book}: {count} quotation', other: '{book}: {count} quotations' },
+    clear: 'Show all',
+    count: { one: '{count} quotation', other: '{count} quotations' },
+    countOf: { one: '{matched} of {count} quotation', other: '{matched} of {count} quotations' },
+    /** `{earlier}` is the passage quoted, `{later}` the passage that quotes it. */
+    pair: '{earlier} in {later}',
+    passageEarlier: 'The words quoted',
+    passageLater: 'Where they are quoted',
+    /** `{version}` is the public-domain Bible the language quotes. */
+    quotedFrom: 'The words of Scripture are given as the {version} has them.',
+    /** Under a passage whose words are left out while the other passage's are given. */
+    textOmitted: 'The words are not given here, because the versions of this passage differ. The comparison below says which reads what.',
+    note: 'The two passages compared',
+    context: 'In the timeline',
+    eventEarlier: 'The words quoted belong to',
+    eventLater: 'They are quoted in',
+    others: 'Other quotations',
+    /** A link to the method page, shown where that page has a section on the quotations. */
+    method: 'How these are chosen',
+  },
+
+  /** How a later text takes up an earlier one. Each kind has its own line in the diagram. */
+  quotationKind: {
+    stated: {
+      label: 'Stated',
+      description: 'The later text itself says that the earlier words are fulfilled here.',
+    },
+    applied: {
+      label: 'Applied',
+      description: 'The later text quotes the earlier words and applies them, without saying that they are fulfilled.',
+    },
+    later: {
+      label: 'Later reading',
+      description: 'A later writer quotes the words and reads them in this sense.',
+    },
   },
 
   map: {

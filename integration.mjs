@@ -32,6 +32,8 @@ const ROUTES = [
   ['/[...locale]/sources/[id]', 'source.astro'],
   ['/[...locale]/threads', 'threads.astro'],
   ['/[...locale]/threads/[id]', 'thread.astro'],
+  ['/[...locale]/quotations', 'quotations.astro'],
+  ['/[...locale]/quotations/[id]', 'quotation.astro'],
   ['/[...locale]/eras/[id]', 'era.astro'],
   ['/[...locale]/data/map.json', 'map-data.ts'],
   ['/[...locale]/404', '404-localized.astro'],

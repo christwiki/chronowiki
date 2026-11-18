@@ -122,7 +122,8 @@
   display: block;
 }
 
-@media (max-width: 62rem) {
+/* Below this width the brand, eight navigation items and the tools no longer fit on one line in every language. */
+@media (max-width: 74rem) {
   .site-header__inner {
     grid-template-columns: 1fr auto;
     grid-template-areas: 'brand tools' 'nav nav';
@@ -358,4 +359,33 @@ a.chip:hover {
 .translation-notice a {
   margin-inline-start: var(--space-2);
   white-space: nowrap;
+}
+
+/* ---- Quotations: one line for each kind ------------------------------------
+   Solid, dashed and dotted, so the kind never depends on colour. The same
+   strokes draw the diagram, its legend and the marks in lists. */
+
+.quotation-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.quotation-line--applied {
+  stroke-dasharray: 5 4;
+}
+
+.quotation-line--later {
+  stroke-dasharray: 0.1 4;
+  stroke-width: 2;
+}
+
+.quotation-mark {
+  flex: none;
+  width: 1.625rem;
+  height: 0.625rem;
+  color: var(--ink-muted);
+  overflow: visible;
 }

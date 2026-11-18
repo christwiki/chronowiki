@@ -15,6 +15,7 @@ import {
   type EventData,
   type PersonData,
   type PlaceData,
+  type QuotationData,
   type SourceData,
   type ThreadData,
 } from '../content/schemas';
@@ -52,6 +53,7 @@ const LINK_COLLECTION: Record<LinkType, CollectionName> = {
   thread: 'threads',
   source: 'sources',
   era: 'eras',
+  quotation: 'quotations',
 };
 
 const MIN_WORDS = 80;
@@ -99,6 +101,7 @@ export function validateContent(raw: RawContent, opts: ValidateOptions = {}): Is
     sources: [] as Entry<SourceData>[],
     threads: [] as Entry<ThreadData>[],
     eras: [] as Entry<EraData>[],
+    quotations: [] as Entry<QuotationData>[],
   };
 
   for (const name of Object.keys(SCHEMAS) as CollectionName[]) {
@@ -348,6 +351,52 @@ export function validateContent(raw: RawContent, opts: ValidateOptions = {}): Is
         }
       }
     }
+  }
+
+  // --- quotations ------------------------------------------------------------
+  for (const quotation of parsed.quotations) {
+    const { data, file } = quotation;
+    const used = usedKeys([
+      ...checkText(file, quotation.body, data.citations),
+      ...checkText(file, data.summary, data.citations),
+    ]);
+
+    const passages: string[] = [];
+    for (const name of ['earlier', 'later'] as const) {
+      const side = data[name];
+      if (side.bible !== undefined) {
+        try {
+          passages.push(parseBibleRef(side.bible).osis);
+        } catch (e) {
+          if (!(e instanceof BibleRefError)) throw e;
+          error('token', file, `${name}.bible: ${e.message}`);
+        }
+      } else if (side.cite !== undefined) {
+        if (side.cite in data.citations) {
+          used.add(side.cite);
+          passages.push(`cite:${side.cite}`);
+        } else {
+          error('token', file, `${name}.cite: no citation "${side.cite}" is defined in this entry's citations`);
+        }
+      }
+      if (side.event !== undefined && !exists('events', side.event)) {
+        error('ref', file, `${name}.event: there is no event "${side.event}"`);
+      }
+    }
+    if (passages.length === 2 && passages[0] === passages[1]) {
+      error('quotation', file, 'The earlier and the later passage are the same');
+    }
+    const [first, second] = [data.earlier.event, data.later.event].map((id) => (id ? eventById.get(id) : undefined));
+    if (first && second && first !== second && compareDated(dated(first), dated(second)) > 0) {
+      warning('quotation-order', file, `The earlier passage's event "${first.id}" comes after the later one's, "${second.id}"`);
+    }
+
+    checkCitations(quotation, used);
+    if (data.draft) {
+      releaseRule('draft', file, 'Entry is still a draft');
+      continue;
+    }
+    if (!data.reviewed) releaseRule('reviewed', file, 'The citations have not been independently checked yet');
   }
 
   // --- sources, threads, eras ------------------------------------------------

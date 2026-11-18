@@ -29,6 +29,7 @@ const LINK_COLLECTION: Record<LinkType, OverlayCollection> = {
   thread: 'threads',
   source: 'sources',
   era: 'eras',
+  quotation: 'quotations',
 };
 
 const SUMMARY_MAX = 280;
@@ -75,6 +76,7 @@ export function validateTranslations(
     sources: new Map(),
     threads: new Map(),
     eras: new Map(),
+    quotations: new Map(),
     pages: new Map(pages.map((page) => [page.id, page])),
   };
   for (const collection of OVERLAY_COLLECTIONS) {

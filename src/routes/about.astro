@@ -33,10 +33,11 @@ const counts: Record<string, number> = {
   sources: [...site.sources.values()].filter(isPublished).length,
   places: [...site.places.values()].filter((place) => !place.data.draft).length,
   people: [...site.people.values()].filter((person) => !person.data.draft).length,
+  quotations: site.quotations.filter((quotation) => !quotation.data.draft).length,
 };
 const html = body.html
   .replace(/<h2>\[([a-z-]+)\]\s*/g, '<h2 id="$1">')
-  .replace(/\{(events|sources|places|people)\}/g, (_, name: string) => i18n.number(counts[name]));
+  .replace(/\{(events|sources|places|people|quotations)\}/g, (_, name: string) => i18n.number(counts[name]));
 const [before, after = ''] = html.split('<p>{confidence-list}</p>');
 
 const link = (path: string, label: string) => `<a href="${href(path)}">${label}</a>`;

@@ -1,0 +1,15 @@
+---
+/** The line of one kind of quotation, as the diagram draws it: three strokes, so the kind never depends on colour. */
+import type { QuotationKind } from '../content/schemas';
+
+interface Props {
+  kind: QuotationKind;
+  class?: string;
+}
+
+const { kind, class: className } = Astro.props;
+---
+
+<svg class:list={['quotation-mark', className]} viewBox="0 0 26 10" aria-hidden="true" data-kind={kind}>
+  <path class:list={['quotation-line', `quotation-line--${kind}`]} d="M1 5H25"></path>
+</svg>

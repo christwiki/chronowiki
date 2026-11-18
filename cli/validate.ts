@@ -24,7 +24,7 @@ if (eraIndex !== -1 && !era) {
   process.exit(2);
 }
 
-/** The files an era owns: its events plus the people, places and sources they reference. */
+/** The files an era owns: its events, the people, places and sources they reference, and the quotations that name them. */
 function filesOfEra(content: RawContent, eraId: string): Set<string> {
   const files = new Set<string>();
   const wanted = { people: new Set<string>(), places: new Set<string>(), sources: new Set<string>() };
@@ -35,6 +35,15 @@ function filesOfEra(content: RawContent, eraId: string): Set<string> {
     files.add(event.file);
     for (const id of data.people ?? []) wanted.people.add(id);
     for (const id of data.places ?? []) wanted.places.add(id);
+    for (const def of Object.values(data.citations ?? {}) as { source?: string }[]) {
+      if (def?.source) wanted.sources.add(def.source);
+    }
+  }
+  const eventIds = new Set(content.events.filter((event) => files.has(event.file)).map((event) => event.id));
+  for (const quotation of content.quotations) {
+    const data = (quotation.data ?? {}) as Record<string, any>;
+    if (!eventIds.has(data.earlier?.event) && !eventIds.has(data.later?.event)) continue;
+    files.add(quotation.file);
     for (const def of Object.values(data.citations ?? {}) as { source?: string }[]) {
       if (def?.source) wanted.sources.add(def.source);
     }

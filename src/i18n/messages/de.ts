@@ -15,6 +15,7 @@ export const de: Messages = {
     timeline: 'Zeitstrahl',
     map: 'Karte',
     threads: 'Leitfäden',
+    quotations: 'Zitate',
     people: 'Personen',
     places: 'Orte',
     sources: 'Quellen',
@@ -127,6 +128,7 @@ export const de: Messages = {
     source: 'Quelle',
     thread: 'Leitfaden',
     era: 'Epoche',
+    quotation: 'Zitat',
     page: 'Seite',
   },
 
@@ -157,6 +159,9 @@ export const de: Messages = {
     pager: 'Zeitstrahl',
     earlier: 'Früher · {date}',
     later: 'Später · {date}',
+    quotations: 'Zitate',
+    quotedLater: 'Worte von hier, später zitiert',
+    quotedHere: 'Ältere Worte, hier zitiert',
   },
 
   sourceList: {
@@ -329,6 +334,56 @@ export const de: Messages = {
     lead: 'Erzählstränge, die die Epochen durchziehen. Wer einem von Anfang bis Ende folgt, sieht, wie Ereignisse zusammengehören, die zeitlich weit auseinanderliegen.',
     whole: 'Der Leitfaden von Anfang bis Ende',
     others: 'Weitere Leitfäden',
+  },
+
+  quotations: {
+    title: 'Zitate',
+    description:
+      'Wo ein späterer Text einen früheren zitiert: beide Stellen nebeneinander, und wie die früheren Worte in ihrem eigenen Zusammenhang zu lesen sind.',
+    lead: {
+      one: '{count} Stelle, an der ein späterer Text einen früheren zitiert. Der Eintrag stellt beide Stellen nebeneinander und sagt, wie die früheren Worte in ihrem eigenen Zusammenhang zu lesen sind.',
+      other:
+        '{count} Stellen, an denen ein späterer Text einen früheren zitiert. Jede Linie verbindet zwei Stellen; jeder Eintrag stellt sie nebeneinander und sagt, wie die früheren Worte in ihrem eigenen Zusammenhang zu lesen sind.',
+    },
+    earlier: 'Zitiert',
+    later: 'Zitiert in',
+    diagram: {
+      one: 'Ein Schaubild mit {count} Zitat: eine Linie vom zitierten Buch zu dem Buch, das es zitiert. Die Liste danach nennt dasselbe.',
+      other:
+        'Ein Schaubild mit {count} Zitaten, jedes eine Linie vom zitierten Buch zu dem Buch, das es zitiert. Die Liste danach nennt jedes einzelne.',
+    },
+    legend: 'Wie die Linien gezeichnet sind',
+    hint: 'Ein Buch oder eine Linienart wählen, um nur dessen Zitate zu sehen.',
+    book: { one: '{book}: {count} Zitat', other: '{book}: {count} Zitate' },
+    clear: 'Alle zeigen',
+    count: { one: '{count} Zitat', other: '{count} Zitate' },
+    countOf: { one: '{matched} von {count} Zitat', other: '{matched} von {count} Zitaten' },
+    pair: '{earlier} in {later}',
+    passageEarlier: 'Die zitierten Worte',
+    passageLater: 'Wo sie zitiert werden',
+    quotedFrom: 'Die Worte der Schrift sind nach der {version} wiedergegeben.',
+    textOmitted: 'Die Worte sind hier nicht wiedergegeben, weil die Fassungen dieser Stelle voneinander abweichen. Der Vergleich unten sagt, welche was liest.',
+    note: 'Die beiden Stellen im Vergleich',
+    context: 'Auf dem Zeitstrahl',
+    eventEarlier: 'Die zitierten Worte gehören zu',
+    eventLater: 'Zitiert werden sie in',
+    others: 'Weitere Zitate',
+    method: 'Wie sie ausgewählt sind',
+  },
+
+  quotationKind: {
+    stated: {
+      label: 'Ausdrücklich',
+      description: 'Der spätere Text sagt selbst, dass die früheren Worte hier erfüllt sind.',
+    },
+    applied: {
+      label: 'Angewandt',
+      description: 'Der spätere Text zitiert die früheren Worte und wendet sie an, ohne zu sagen, dass sie erfüllt sind.',
+    },
+    later: {
+      label: 'Spätere Lesart',
+      description: 'Ein späterer Autor zitiert die Worte und liest sie in diesem Sinn.',
+    },
   },
 
   map: {

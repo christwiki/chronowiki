@@ -81,7 +81,7 @@ function status() {
         }
       }
       const share = entries.length === 0 ? 100 : Math.round((done / entries.length) * 100);
-      console.log(`  ${collection.padEnd(8)} ${String(done).padStart(5)} of ${String(entries.length).padEnd(5)} ${String(share).padStart(3)}%`);
+      console.log(`  ${collection.padEnd(10)} ${String(done).padStart(5)} of ${String(entries.length).padEnd(5)} ${String(share).padStart(3)}%`);
     }
     if (stale.length > 0) {
       console.log(`\n  Out of date (the original entry changed after the translation was made):`);

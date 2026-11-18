@@ -11,9 +11,9 @@
  */
 import { createHash } from 'node:crypto';
 
-export type OverlayCollection = 'events' | 'people' | 'places' | 'sources' | 'threads' | 'eras' | 'pages';
+export type OverlayCollection = 'events' | 'people' | 'places' | 'sources' | 'threads' | 'eras' | 'quotations' | 'pages';
 
-export const OVERLAY_COLLECTIONS: OverlayCollection[] = ['events', 'people', 'places', 'sources', 'threads', 'eras', 'pages'];
+export const OVERLAY_COLLECTIONS: OverlayCollection[] = ['events', 'people', 'places', 'sources', 'threads', 'eras', 'quotations', 'pages'];
 
 /** The front matter of an overlay. Which fields apply depends on the collection. */
 export interface OverlayData {
@@ -33,6 +33,9 @@ export interface OverlayData {
   bornDisplay?: string;
   diedDisplay?: string;
   writtenDisplay?: string;
+  /** The words of the two passages of a quotation, in the version this language quotes. */
+  earlierText?: string;
+  laterText?: string;
   author?: string;
   cite?: string;
   language?: string;
@@ -52,6 +55,7 @@ export const TRANSLATABLE: Record<OverlayCollection, readonly (keyof OverlayData
   sources: ['title', 'author', 'cite', 'language', 'edition', 'holding', 'summary', 'writtenDisplay', 'links'],
   threads: ['title', 'summary'],
   eras: ['title', 'short', 'span', 'summary'],
+  quotations: ['title', 'summary', 'earlierText', 'laterText'],
   pages: ['title', 'summary'],
 };
 
@@ -62,7 +66,7 @@ export const TRANSLATABLE: Record<OverlayCollection, readonly (keyof OverlayData
  */
 export const OPTIONAL: readonly (keyof OverlayData)[] = ['altNames', 'author', 'cite', 'language', 'holding'];
 
-export const HAS_CITATIONS: readonly OverlayCollection[] = ['events', 'people', 'places', 'pages'];
+export const HAS_CITATIONS: readonly OverlayCollection[] = ['events', 'people', 'places', 'quotations', 'pages'];
 
 type Data = Record<string, any>;
 
@@ -77,6 +81,8 @@ export function wordsOf(collection: OverlayCollection, data: Data): Partial<Over
     else if (field === 'bornDisplay') set(field, data.born?.display);
     else if (field === 'diedDisplay') set(field, data.died?.display);
     else if (field === 'writtenDisplay') set(field, data.written?.display);
+    else if (field === 'earlierText') set(field, data.earlier?.text);
+    else if (field === 'laterText') set(field, data.later?.text);
     else if (field === 'links') set(field, (data.links as { label: string }[] | undefined)?.map((link) => link.label));
     else set(field, data[field]);
   }
@@ -106,6 +112,8 @@ export function applyOverlay<T extends Data>(collection: OverlayCollection, data
     else if (field === 'bornDisplay') out.born = data.born && { ...data.born, display: value };
     else if (field === 'diedDisplay') out.died = data.died && { ...data.died, display: value };
     else if (field === 'writtenDisplay') out.written = data.written && { ...data.written, display: value };
+    else if (field === 'earlierText') out.earlier = data.earlier && { ...data.earlier, text: value };
+    else if (field === 'laterText') out.later = data.later && { ...data.later, text: value };
     else if (field === 'links') {
       out.links = (data.links as { label: string; url: string }[]).map((link, index) => ({
         ...link,

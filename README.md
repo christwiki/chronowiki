@@ -9,7 +9,8 @@ It was built for [Christwiki](https://christwiki.org), which tells the story of 
 ## What a wiki gets
 
 - **A timeline** grouped by era, with filters by era, thread, region, dating and word, and a map beside it that follows what is on screen.
-- **Six kinds of entry**, all cross-linked: events, people, places, sources, threads (storylines that run across the eras) and eras.
+- **Seven kinds of entry**, all cross-linked: events, people, places, sources, threads (storylines that run across the eras), eras and quotations.
+- **Quotations**, for a wiki whose sources quote one another: each is an entry that sets the earlier and the later passage side by side, and one page draws them all as lines between the books. A wiki without them has no such page.
 - **Citations at passage level.** A sentence names the source and the passage that support it, and one click opens that passage.
 - **Dates that say how sure they are.** Every date is labelled firm, estimated, traditional or undated, with a note on how it is known.
 - **A map drawn by the site itself** from public-domain shapes: no tiles, no outside service, no modern borders.
@@ -47,6 +48,7 @@ my-wiki/
       places/<id>.md
       sources/<id>.md       the texts and objects that are cited
       threads/<id>.md       storylines across the eras
+      quotations/<id>.md    where a later text quotes an earlier one (optional)
       pages/about.md        how the wiki is made
       i18n/<language>/…     translations
     styles/custom.css       the wiki's own colours and typefaces (optional)
@@ -166,8 +168,8 @@ npm run check      # types
 | `integration.mjs` | the Astro integration: adds the pages, hands the wiki's settings to the theme, builds the search index |
 | `src/routes/` | every page, once, for all languages |
 | `src/components/`, `src/layouts/`, `src/styles/` | the design |
-| `src/scripts/` | what runs in the browser: the timeline's filters, the map, search |
-| `src/lib/` | the logic, as small tested libraries: dates, Bible references, prose and citations, the validator |
+| `src/scripts/` | what runs in the browser: the timeline's filters, the map, search, the choices on the quotations page |
+| `src/lib/` | the logic, as small tested libraries: dates, Bible references, prose and citations, the layout of the quotations diagram, the validator |
 | `src/i18n/` | languages, messages, and the overlay that lays a translation over an entry |
 | `src/content/` | the schemas of the entries and the content collections |
 | `src/config/` | `defineWiki()` and the loader for the tools |

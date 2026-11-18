@@ -3,7 +3,7 @@
  *
  *   [[bible:2 Kings 25:8-10]]        citation of Scripture
  *   [[cite:key]]                     citation of a source listed in the entry's `citations`
- *   [[person:id]], [[place:id|text]] internal links (also event, thread, source, era)
+ *   [[person:id]], [[place:id|text]] internal links (also event, thread, source, era, quotation)
  *
  * Astro's own Markdown pipeline is not involved, so the same renderer serves
  * entry bodies and front-matter fields, and it can be unit-tested as a pure function.
@@ -12,9 +12,9 @@ import { micromark } from 'micromark';
 import { EN_QUOTES, smarten, smartenMarkdown, type Quotes } from './typography';
 import { BibleRefError, EN_BIBLE, parseBibleRef, type BibleRef, type BibleStyle } from './bible';
 
-export type LinkType = 'person' | 'place' | 'event' | 'thread' | 'source' | 'era';
+export type LinkType = 'person' | 'place' | 'event' | 'thread' | 'source' | 'era' | 'quotation';
 
-const LINK_TYPES: readonly LinkType[] = ['person', 'place', 'event', 'thread', 'source', 'era'];
+const LINK_TYPES: readonly LinkType[] = ['person', 'place', 'event', 'thread', 'source', 'era', 'quotation'];
 
 export interface CitationDef {
   source: string;

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const INDEXES = ['/', '/map/', '/threads/', '/people/', '/places/', '/sources/', '/about/'];
+const INDEXES = ['/', '/map/', '/threads/', '/quotations/', '/people/', '/places/', '/sources/', '/about/'];
 
 test.describe('site', () => {
   test('every internal link resolves', async ({ page, request, isMobile }) => {

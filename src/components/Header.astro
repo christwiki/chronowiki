@@ -1,6 +1,7 @@
 ---
 import wiki from 'virtual:chronowiki/config';
 import { useI18n, type MessageKey } from '../i18n';
+import { getSite } from '../lib/site';
 
 interface Props {
   section?: string;
@@ -10,10 +11,14 @@ const { section } = Astro.props;
 const i18n = useI18n(Astro);
 const { t, href } = i18n;
 
+// A wiki that records no quotations has no page of them.
+const { quotations } = await getSite(i18n.code);
+
 const NAV: { id: string; label: MessageKey; path: string }[] = [
   { id: 'timeline', label: 'nav.timeline', path: '/' },
   { id: 'map', label: 'nav.map', path: '/map/' },
   { id: 'threads', label: 'nav.threads', path: '/threads/' },
+  ...(quotations.length > 0 ? [{ id: 'quotations', label: 'nav.quotations' as MessageKey, path: '/quotations/' }] : []),
   { id: 'people', label: 'nav.people', path: '/people/' },
   { id: 'places', label: 'nav.places', path: '/places/' },
   { id: 'sources', label: 'nav.sources', path: '/sources/' },

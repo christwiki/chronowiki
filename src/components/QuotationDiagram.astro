@@ -1,0 +1,356 @@
+---
+/**
+ * The quotations as a drawing: the books quoted on one side, the books that
+ * quote them on the other, and a line for every quotation. It is drawn here,
+ * when the site is built, so it needs no script. With the script
+ * (`src/scripts/quotations.ts`) a book or a kind of line can be chosen, and the
+ * drawing and the list below it show only those.
+ *
+ * The drawing repeats the list that follows it, so it is hidden from screen
+ * readers and its lines are left out of the tab order; the list is the
+ * accessible form.
+ */
+import { QUOTATION_KINDS } from '../content/schemas';
+import { useI18n } from '../i18n';
+import { layoutDiagram, linkPath, type DiagramGroup } from '../lib/quotations';
+import { entryHref, getSite, type PassageView, type QuotationView } from '../lib/site';
+import QuotationMark from './QuotationMark.astro';
+
+interface Props {
+  quotations: QuotationView[];
+}
+
+const { quotations } = Astro.props;
+const i18n = useI18n(Astro);
+const { t } = i18n;
+const site = await getSite(i18n.code);
+
+/** The books or sources of one side, each once, in the order they stand in. */
+function groupsOf(side: 'earlier' | 'later'): (DiagramGroup & { label: string; count: number })[] {
+  const seen = new Map<string, { passage: PassageView; count: number }>();
+  for (const quotation of quotations) {
+    const passage = quotation[side];
+    const group = seen.get(passage.group.id);
+    if (group) group.count += 1;
+    else seen.set(passage.group.id, { passage, count: 1 });
+  }
+  return [...seen.values()]
+    .sort((a, b) => a.passage.sort[0] - b.passage.sort[0])
+    .map(({ passage, count }) => ({
+      id: passage.group.id,
+      label: passage.group.label,
+      count,
+      // The name of a source runs over two lines.
+      minHeight: passage.group.source ? 40 : undefined,
+    }));
+}
+
+const earlier = groupsOf('earlier');
+const later = groupsOf('later');
+const layout = layoutDiagram(
+  quotations.map((quotation) => ({ id: quotation.id, earlier: quotation.earlier.group.id, later: quotation.later.group.id })),
+  earlier,
+  later,
+);
+const byId = new Map(quotations.map((quotation) => [quotation.id, quotation]));
+const kinds = QUOTATION_KINDS.filter((kind) => quotations.some((quotation) => quotation.kind === kind));
+
+/** The drawing's units are sixteenths of a rem, so it grows with the reader's type size. */
+const rem = (units: number) => `${Math.round((units / 16) * 1000) / 1000}rem`;
+
+const columns = [
+  { side: 'earlier', heading: t('quotations.earlier'), groups: earlier, placed: layout.earlier },
+  { side: 'later', heading: t('quotations.later'), groups: later, placed: layout.later },
+] as const;
+---
+
+<figure class="quotation-diagram" data-quotation-diagram aria-labelledby="quotation-diagram-caption">
+  <figcaption class="sr-only" id="quotation-diagram-caption">{t('quotations.diagram', { count: quotations.length })}</figcaption>
+
+  <div class="quotation-diagram__head" aria-hidden="true">
+    <span>{columns[0].heading}</span>
+    <span>{columns[1].heading}</span>
+  </div>
+
+  <div class="quotation-diagram__body" style={`--diagram-height: ${rem(layout.height)}`}>
+    {
+      columns.map(({ side, heading, groups, placed }, index) => (
+        <>
+          <ul class:list={['quotation-diagram__books', `quotation-diagram__books--${side}`]} role="list" aria-label={heading}>
+            {groups.map((group, row) => (
+              <li
+                style={`margin-top: ${rem(placed[row].top - (row === 0 ? 0 : placed[row - 1].top + placed[row - 1].height))}; height: ${rem(placed[row].height)}`}
+                data-diagram-row={group.id}
+              >
+                <span
+                  class="quotation-diagram__book"
+                  data-diagram-group={group.id}
+                  data-diagram-side={side}
+                  title={t('quotations.book', { book: group.label, count: group.count })}
+                >
+                  {group.label}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {index === 0 && (
+            <svg
+              class="quotation-diagram__lines"
+              viewBox={`0 0 100 ${layout.height}`}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+              focusable="false"
+            >
+              {layout.links.map((link) => {
+                const quotation = byId.get(link.id)!;
+                const d = linkPath(link);
+                return (
+                  <a
+                    href={entryHref(site, 'quotation', quotation.id)}
+                    tabindex="-1"
+                    data-quotation={quotation.id}
+                    data-kind={quotation.kind}
+                    data-earlier={quotation.earlier.group.id}
+                    data-later={quotation.later.group.id}
+                  >
+                    <title>{`${t('quotations.pair', { earlier: quotation.earlier.label, later: quotation.later.label })}: ${quotation.title}`}</title>
+                    <path class="quotation-diagram__hit" d={d} />
+                    <path class:list={['quotation-line', `quotation-line--${quotation.kind}`]} d={d} />
+                  </a>
+                );
+              })}
+            </svg>
+          )}
+        </>
+      ))
+    }
+  </div>
+
+  <div class="quotation-diagram__legend">
+    <h2 class="section-title">{t('quotations.legend')}</h2>
+    <dl>
+      {
+        kinds.map((kind) => (
+          <div>
+            <dt>
+              <span class="quotation-diagram__kind" data-diagram-kind={kind}>
+                <QuotationMark kind={kind} />
+                {t(`quotationKind.${kind}.label`)}
+              </span>
+            </dt>
+            <dd>{t(`quotationKind.${kind}.description`)}</dd>
+          </div>
+        ))
+      }
+    </dl>
+    <p class="quotation-diagram__status meta" data-diagram-status hidden>
+      <span data-diagram-hint>{t('quotations.hint')}</span>
+      <span data-diagram-count aria-live="polite" hidden></span>
+      <button type="button" data-diagram-clear hidden>{t('quotations.clear')}</button>
+    </p>
+  </div>
+</figure>
+
+<script>
+  import '../scripts/quotations';
+</script>
+
+<style>
+  .quotation-diagram {
+    margin: 0;
+    padding-block: var(--space-6);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .quotation-diagram__head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    max-width: 52rem;
+    margin-inline: auto;
+    margin-bottom: var(--space-3);
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .quotation-diagram__body {
+    display: grid;
+    grid-template-columns: max-content minmax(4rem, 1fr) max-content;
+    max-width: 52rem;
+    margin-inline: auto;
+  }
+
+  /* The layout gives every row its height and the space above it, so the rows meet the ends of their lines. */
+  .quotation-diagram__books {
+    height: var(--diagram-height);
+  }
+
+  .quotation-diagram__books li {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    border-color: var(--rule-strong);
+    border-style: solid;
+    border-width: 0;
+  }
+
+  .quotation-diagram__books--earlier li {
+    justify-content: flex-end;
+    padding-inline-end: var(--space-3);
+    border-inline-end-width: 3px;
+    text-align: end;
+  }
+
+  .quotation-diagram__books--later li {
+    padding-inline-start: var(--space-3);
+    border-inline-start-width: 3px;
+  }
+
+  .quotation-diagram__book,
+  .quotation-diagram__books :global(button) {
+    font-family: var(--font-sans);
+    font-size: var(--ui-small);
+    line-height: 1.2;
+    color: var(--ink);
+    max-width: 9.5rem;
+  }
+
+  .quotation-diagram__lines {
+    display: block;
+    width: 100%;
+    height: var(--diagram-height);
+    color: var(--ink-muted);
+    overflow: visible;
+  }
+
+  .quotation-diagram__lines a {
+    color: inherit;
+    opacity: 0.8;
+    transition: opacity 0.15s;
+  }
+
+  /* A wide unseen stroke under each line, so that a line is easy to point at. */
+  .quotation-diagram__hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 12;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .quotation-diagram__lines a:hover,
+  .quotation-diagram__lines a:global(.is-hot) {
+    color: var(--accent);
+    opacity: 1;
+  }
+
+  .quotation-diagram__lines a:hover :global(.quotation-line),
+  .quotation-diagram__lines a:global(.is-hot) :global(.quotation-line) {
+    stroke-width: 2.5;
+  }
+
+  .quotation-diagram__lines a:global(.is-dim) {
+    opacity: 0.08;
+    pointer-events: none;
+  }
+
+  .quotation-diagram__books li:global(.is-dim) {
+    border-color: var(--rule);
+  }
+
+  .quotation-diagram__books li:global(.is-dim) :global(button) {
+    color: var(--ink-faint);
+  }
+
+  /* With the script, the names of the books and of the kinds are buttons. */
+  .quotation-diagram :global(button[data-diagram-group]),
+  .quotation-diagram :global(button[data-diagram-kind]) {
+    padding: 0.2rem 0.45rem;
+    margin: -0.2rem -0.45rem;
+    border: 0;
+    border-radius: var(--radius);
+    background: none;
+    text-align: inherit;
+    cursor: pointer;
+  }
+
+  .quotation-diagram :global(button[data-diagram-group]:hover),
+  .quotation-diagram :global(button[data-diagram-kind]:hover) {
+    background: var(--surface-sunk);
+  }
+
+  .quotation-diagram :global(button[aria-pressed='true']) {
+    background: var(--accent-soft);
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .quotation-diagram__legend {
+    max-width: 52rem;
+    margin: var(--space-6) auto 0;
+  }
+
+  .quotation-diagram__legend dl {
+    margin: 0;
+    display: grid;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--ui);
+  }
+
+  .quotation-diagram__legend dl > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.1rem var(--space-4);
+  }
+
+  .quotation-diagram__kind,
+  .quotation-diagram__legend :global(button[data-diagram-kind]) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--ui);
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .quotation-diagram__legend dd {
+    margin: 0;
+    color: var(--ink-muted);
+  }
+
+  .quotation-diagram__status {
+    margin-top: var(--space-4);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .quotation-diagram__status button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  @media (min-width: 40rem) {
+    .quotation-diagram__legend dl > div {
+      grid-template-columns: 11rem minmax(0, 1fr);
+      align-items: baseline;
+    }
+  }
+
+  @media print {
+    .quotation-diagram__status {
+      display: none;
+    }
+  }
+</style>
