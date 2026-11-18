@@ -6,7 +6,7 @@ earlier:
   bible: "Isa 53:1"
   event: prophecies-of-return
   text: |
-    Who has believed our message?
+    …
     To whom has the arm of Yahweh been revealed?
 later:
   bible: "John 12:38"
@@ -21,8 +21,10 @@ citations:
     url: https://ebible.org/eng-Brenton/ISA53.htm
 ---
 
-John tells how [[person:jesus]] departs and hides himself, and says that although he had done so many signs before them they did not believe in him, so that the word of Isaiah the prophet might be fulfilled [[bible:John 12:36-38]]. The quotation agrees with the ancient Greek translation, which begins with "Lord" [[cite:lxx]]. The Hebrew text, as modern translations render it, has no such address [[bible:Isa 53:1]].
+John tells how [[person:jesus]] departs and hides himself, and says that although he had done so many signs before them they did not believe in him, so that the word of Isaiah the prophet might be fulfilled [[bible:John 12:36-38]]. The quotation agrees with the ancient Greek translation, which opens by addressing the Lord [[cite:lxx]]. The Hebrew text, as modern translations render it, has no such address [[bible:Isa 53:1]].
 
-In Isaiah the question stands at the head of the passage about the servant who was despised and who suffered for the transgressions of others [[bible:Isa 53:1-5]]. Paul quotes the same line in Romans, of those who did not listen to the good news [[bible:Rom 10:16]].
+The translations differ on the first line of the verse, which is therefore not given above. The World English Bible has "Who has believed our message?" The New Revised Standard Version Updated Edition, to which the links here lead, makes it something that the speakers have heard [[bible:Isa 53:1]].
 
-John joins a second quotation to this one, from Isaiah's vision, and says that Isaiah saw his glory and spoke of him [[bible:John 12:39-41]]. Who the servant of Isaiah 53 is has been read in more than one way; the readings are set out under [[event:prophecies-of-return|the prophecy of the suffering servant]].
+In Isaiah the question stands near the start of the passage about the servant, who is despised and suffers for the transgressions of others [[bible:Isa 52:13-53:5]]. Paul quotes the same line in Romans, of those who did not listen to the good news [[bible:Rom 10:16]].
+
+John joins a second quotation to this one, from the vision of Isaiah, and says that Isaiah saw his glory and spoke of him [[bible:John 12:39-41; Isa 6:10]]. Who the servant of Isaiah 53 is has been read in more than one way; the readings are set out under [[event:prophecies-of-return|the prophecy of the suffering servant]].

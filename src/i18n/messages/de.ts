@@ -374,7 +374,7 @@ export const de: Messages = {
   quotationKind: {
     stated: {
       label: 'Ausdrücklich',
-      description: 'Der spätere Text sagt selbst, dass die früheren Worte hier erfüllt oder gemeint sind.',
+      description: 'Der spätere Text sagt selbst, dass die früheren Worte hier erfüllt sind.',
     },
     applied: {
       label: 'Angewandt',

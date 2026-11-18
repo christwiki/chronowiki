@@ -33,7 +33,7 @@ export const PLACE_KINDS = ['city', 'region', 'mountain', 'river', 'sea', 'islan
 
 /**
  * How a later text takes up an earlier one. `stated`: it says itself that the
- * earlier words are fulfilled or meant here. `applied`: it quotes them and
+ * earlier words are fulfilled here. `applied`: it quotes them and
  * applies them without saying so. `later`: the reading is a later writer's.
  */
 export const QUOTATION_KINDS = ['stated', 'applied', 'later'] as const;

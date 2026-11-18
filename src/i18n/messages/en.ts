@@ -406,7 +406,7 @@ export const en = {
   quotationKind: {
     stated: {
       label: 'Stated',
-      description: 'The later text itself says that the earlier words are fulfilled or meant here.',
+      description: 'The later text itself says that the earlier words are fulfilled here.',
     },
     applied: {
       label: 'Applied',

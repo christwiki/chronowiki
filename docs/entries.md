@@ -196,7 +196,7 @@ The three kinds say how the later text takes up the earlier one, and each has it
 
 | Value | Use when |
 |---|---|
-| `stated` | The later text itself says that the earlier words are fulfilled or meant here. |
+| `stated` | The later text itself says that the earlier words are fulfilled here. |
 | `applied` | The later text quotes the earlier words and applies them, without saying that they are fulfilled. |
 | `later` | A later writer quotes the words and reads them in this sense. |
 
